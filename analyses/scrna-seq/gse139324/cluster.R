@@ -15,6 +15,7 @@ library(dplyr)
 library(stringr)
 library(ggplot2)
 library(RColorBrewer)
+library(SingleR)
 source("singler/init.R")
 
 all_markers <- Seurat::FindAllMarkers(

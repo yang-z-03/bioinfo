@@ -9,4 +9,7 @@ refseq/wanted.rds filter=lfs diff=lfs merge=lfs -text
 refseq/9606/genes-ext.rds filter=lfs diff=lfs merge=lfs -text
 refseq/9606/genes.rds filter=lfs diff=lfs merge=lfs -text
 
+ucsc/9606/hsa-grch-38-bed.gz filter=lfs diff=lfs merge=lfs -text
+ucsc/10090/mmu-grch-39-bed.gz filter=lfs diff=lfs merge=lfs -text
+
 msigdb/2023.2/all.rds filter=lfs diff=lfs merge=lfs -text
