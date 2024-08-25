@@ -1,0 +1,11 @@
+
+nucleotides:
+===========
+
+    contain raw sequencing reads from nucleotide archives.
+
+    - err523111: (https://www.ebi.ac.uk/ena/browser/view/ERR523111?show=reads)
+        
+        Illumina HiSeq 2000 paired end sequencing; Single cell mRNA-sequencing 
+        reveals cell-to-cell variation in three mouse ES cell culture conditions
+

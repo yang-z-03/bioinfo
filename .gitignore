@@ -1,0 +1,30 @@
+
+# R related hidden files
+.Rproj.user/
+.Rhistory
+.Rprofile
+bioinfo.Rproj
+
+# databases
+ensembl/9606/*
+ensembl/10090/*
+!ensembl/readme
+!ensembl/9606/genes.rds
+
+refseq/9606/*
+!refseq/9606/genes.rds
+!refseq/9606/genes-ext.rds
+
+synapse/*
+!synapse/readme
+
+geo/*
+!geo/readme
+
+nucleotides/*
+!nucleotides/readme
+
+tax/ncbi.sql
+
+# msigdb/
+# !msigdb/readme

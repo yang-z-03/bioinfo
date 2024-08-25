@@ -1,0 +1,16 @@
+
+tax:
+===
+
+    the ncbi taxonomy database dump.
+
+    ../tax
+    ├── ncbi-hierarchies.rds
+    ├── ncbi-names.rds
+    ├── ncbi-nodes.rds
+    └── ncbi.sql *
+
+    * the raw sql database dump is not uploaded. this is translated to the tree
+      node relationships containing in ncbi-nodes.rds and ncbi-hierarchies.rds
+      for easier interaction using R.
+

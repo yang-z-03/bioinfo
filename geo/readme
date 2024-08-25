@@ -1,0 +1,25 @@
+
+geo:
+===
+
+    this folder contains the data retrieved for analyses from ncbi gene 
+    expression omnibus (geo). the data are of extensive size.
+
+    the folder contains:
+    
+    - GSE117570 (Reprogramming of Tumor-infiltrating Immune Cells in 
+                 Early Stage of NSCLC)
+
+    - GSE127465 (Single cell transcriptomics of human and mouse lung 
+                 cancers reveals conserved myeloid populations across 
+                 individuals and species)
+
+    - GSE139324 (Immune landscape of viral- and carcinogen-drived head 
+                 and neck cancer)
+
+    - GSE202374 (Tumor and immune remodeling following radiotherapy in 
+                 human renal cell carcinoma)
+
+    - GSE210132 (The NALCN channel regulates metastasis and non-malignant 
+                 cell dissemination (scRNA-Seq))
+

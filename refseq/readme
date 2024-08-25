@@ -1,0 +1,25 @@
+
+refseq:
+======
+
+    contains catalogs, genomes and their annotations downloaded from the ncbi
+    reference sequence database.
+
+    contents:
+
+    ../refseq
+    ├── 9606
+    │   ├── genes-ext.rds
+    │   └── genes.rds
+    ├── all-kindoms.txt
+    ├── archaea.txt
+    ├── fungi.txt
+    ├── invertebrate.txt
+    ├── organisms.rds
+    ├── plant.txt
+    ├── protozoa.txt
+    ├── vertebrate-others.txt
+    ├── vertibrate-mammalian.txt
+    ├── viral.txt
+    └── wanted.rds
+
