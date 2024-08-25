@@ -1,0 +1,35 @@
+
+                                    bioinfo
+                                    =======
+
+1   introduction
+================
+
+    repository for resources on analyses and manipulation of genomic and 
+    transcriptomic data.
+
+2   licensing
+=============
+
+    unless otherwise stated, all source code is licensed under GNU GPLv3.
+
+    > This program is free software: you can redistribute it and/or modify
+    > it under the terms of the GNU General Public License as published by
+    > the Free Software Foundation, either version 3 of the License, or
+    > (at your option) any later version.
+    >
+    > This program is distributed in the hope that it will be useful,
+    > but WITHOUT ANY WARRANTY; without even the implied warranty of
+    > MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    > GNU General Public License for more details.
+    >
+    > You should have received a copy of the GNU General Public License
+    > along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+    references to sources from other authors:
+
+    (1) scrubletR: from <https://github.com/Moonerss/scrubletR>
+    (2) singleR: from 
+        <https://bioconductor.org/packages/release/bioc/html/SingleR.html>
+    (3) several small scripts from 
+        <https://github.com/tallulandrews/scRNASeqPipeline/tree/master>
