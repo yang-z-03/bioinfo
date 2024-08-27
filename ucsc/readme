@@ -1,0 +1,18 @@
+
+ucsc:
+====
+
+    contains genome and annotations downloaded from the ucsc genome browser.
+    the genome sequence ought to be the same the the annotation is different
+    between ensembl, ncbi refseq and ucsc.
+
+    the ucsc provide natively the annotations in the format of .bed files.
+    where RSeQC packages require these as necessity.
+
+    contents:
+
+    - 9606
+        - hsa-grch-38-bed.gz
+
+    - 10090
+        - mmu-grcm-39-bed.gz

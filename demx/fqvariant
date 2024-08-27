@@ -1,0 +1,102 @@
+#!/usr/bin/python
+
+from Bio.Seq import Seq
+import argparse
+import pandas as pd
+import matplotlib.pyplot as plt
+import threading
+
+import fq
+from ansi import error
+
+parser = argparse.ArgumentParser(
+    prog = 'demx: fqstat',
+    description = 'fastq statistics'
+)
+
+parser.add_argument('fname', type = str,
+                    help = 'input file, fastq file (can be gzipped).')
+parser.add_argument('-x', default = False, action = 'store_true', dest = 'gzipped',
+                    help = 'explicitly specify whether the file is zipped archive.')
+parser.add_argument('-l', type = int, default = 100, dest = 'length',
+                    help = 'length of the sequences to calculate.')
+parser.add_argument('-s', type = int, default = 4, dest = 'segment',
+                    help = 'alignment length of sub-segments.')
+parser.add_argument('-c', type = int, default = 0, dest = 'scater',
+                    help = 'tolerance of scater.')
+parser.add_argument('-t', type = int, default = 10, dest = 'threads',
+                    help = 'number of parallel workers.')
+
+params = parser.parse_args()
+
+if params.fname.endswith('gz'):
+    params.gzipped = True
+
+contents = None
+if params.gzipped: contents = fq.readfq_seqs_gzipped(params.fname)
+else: contents = fq.readfq_seqs(params.fname)
+
+if contents == None:
+    error('read fastq file error.')
+
+# generate equivalent sequence objects
+contents['bioseqs'] = [Seq(x) for x in contents['seqs']]
+
+variants = {}
+
+def variant(pos, subset):
+
+    unique = 0
+    while len(subset) > 0:
+        print(pos, ">", len(subset))
+        target = subset[0]
+        unique += 1
+        subset.remove(target)
+        subset = [s for s in subset if not target in s]
+    
+    print(pos, '=', unique)
+    variants[pos] = unique
+
+pos = [x for x in range(0, params.length)]
+rounds = len(pos) // params.threads
+if len(pos) % params.threads != 0: rounds += 1
+
+# for r in range(rounds):
+#     start = r * params.threads
+#     end = (r + 1) * params.threads
+#     if end > len(pos): end = len(pos)
+#     threads = []
+# 
+#     for p in range(start, end):
+# 
+#         print('creating thread for', p)
+#         ts = p - params.scater
+#         te = p + params.segment + params.scater
+#         if ts < 0: ts = 0
+#         subset = [x[ts:te] for x in contents['seqs']]
+#         subset = [s for s in subset if not len(s) == 0]
+# 
+#         threads += [threading.Thread(target = variant,
+#                                      args = (p, subset))]
+#     
+#     for x in threads: x.start()
+#     for x in threads: x.join()
+
+for p in range(params.length - params.segment):
+
+    print('creating thread for', p)
+    ts = p - params.scater
+    te = p + params.segment + params.scater
+    if ts < 0: ts = 0
+    subset = [x[ts:te] for x in contents['seqs']]
+    subset = [s for s in subset if not len(s) == 0]
+
+    variant(p, subset)
+
+print(variants)
+
+# plots = []
+# for k in variants.keys():
+#     plots += [[int(k), int(variants[k])]]
+# 
+# plt.plot(plots)

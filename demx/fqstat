@@ -1,0 +1,36 @@
+#!/usr/bin/python
+
+import argparse
+import pandas as pd
+
+import fq
+from ansi import error
+
+parser = argparse.ArgumentParser(
+    prog = 'demx: fqstat',
+    description = 'fastq statistics'
+)
+
+parser.add_argument('fname', type = str,
+                    help = 'input file, fastq file (can be gzipped).')
+parser.add_argument('-x', default = False, action = 'store_true', dest = 'gzipped',
+                    help = 'explicitly specify whether the file is zipped archive.')
+
+params = parser.parse_args()
+
+if params.fname.endswith('gz'):
+    params.gzipped = True
+
+contents = None
+if params.gzipped: contents = fq.readfq_seqs_gzipped(params.fname)
+else: contents = fq.readfq_seqs(params.fname)
+
+if contents == None:
+    error('read fastq file error.')
+
+print('contains {0} sequence(s)'.format(len(contents['names'])))
+
+# the frequency map of sequence lengths
+lengths = [len(x) for x in contents['seqs']]
+print('distribution of sequence lengths:')
+print(pd.Series(lengths).value_counts())

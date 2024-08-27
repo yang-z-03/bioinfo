@@ -28,3 +28,11 @@ tax/ncbi.sql
 
 # msigdb/
 # !msigdb/readme
+
+# Python related hidden files
+__pycache__
+
+# C related hidden files
+*.o
+*.so
+main
