@@ -1,0 +1,16 @@
+
+                            ge: gene expression
+                            ===================
+
+1   introduction
+================
+
+    this section describes how to preprocess popular single cell transcriptomic
+    data, mostly from 3' single-cell RNA-seq (scRNA-seq) with some 5' and 
+    full-length scRNA-seq methods.
+
+2   contents
+============
+
+    ./10x-chromium-3': 10x chromium single cell 3' gene expression kit.
+    
