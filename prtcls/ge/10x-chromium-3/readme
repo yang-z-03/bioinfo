@@ -1,0 +1,1001 @@
+
+                                    10x-3'
+                                    ======
+
+1   3'v1 protocol
+=================
+
+    the chromium single cell 3' solution v1 chemistry was used in the official 
+    10x genomics publication by zheng et al., 2017 in nature communications. 
+    <https://www.nature.com/articles/ncomms14049> it is now obsolete and 
+    superseded by the later chemistries. i cannot find the exact sequence 
+    information from the 10x website, so sequences shown here is based on 
+    educational guess. based on their v1 manual pdf and actual data, i think the 
+    information in this page is accurate. you can find out all the cell barcodes 
+    (14 bp) here: <./v1-barcodes.txt.gz>. this file is copied from cell ranger 
+    (using cell ranger v2.1.0 as an example) 
+    <cellranger-2.1.0/cellranger-cs/2.1.0/tenkit/lib/python/tenkit/barcodes>.
+
+    adapter and primer sequences:
+    * (|) indicats beads.
+    
+    beads-oligo-dt: 
+
+        |--5'- caagcagaagacggcatacgagat - [14-bp cell barcode] - ...
+               gtgactggagttcagacgtgtgctcttccgatct - [10-bp umi] - (t)30 - vn -3'
+
+    template switching oligo (tso): 
+
+        5'- aagcagtggtatcaacgcagagtacatrgrgrg -3'
+
+    ispcr:
+
+        5'- aagcagtggtatcaacgcagagtacat -3'
+
+    illumina truseq read 1 primer: 
+
+        5'- acactctttccctacacgacgctcttccgatct -3'
+
+    illumina truseq read 2 primer: 
+
+        5'- gtgactggagttcagacgtgtgctcttccgatct -3'
+
+    truseq adapter (double stranded dna with a t overhang):
+
+        5'-  tctttccctacacgacgctcttccgatct -3'
+                         3'- cgagaaggctag  -5'
+
+    si-pcr primer: 
+    
+        5'- aatgatacggcgaccaccgagatctacac - [8-bp sample index] - ...
+            acactctttccctacacgacgctcttccgatct -3'
+
+    cell barcode sequencing primer (index1): 
+    
+        5'- gatcggaagagcacacgtctgaactccagtcac -3'
+
+    sample index sequencing primer (index2): 
+    
+        5'- agatcggaagagcgtcgtgtagggaaagagtgt -3'
+
+    illumina p5 adapter: 
+    
+        5'- aatgatacggcgaccaccgagatctacac -3'
+
+    illumina p7 adapter: 
+    
+        5'- caagcagaagacggcatacgagat -3'
+
+    
+    1.1 library generation
+    ======================
+
+        (1) mrna capture using beads-oligo-dt in the droplets, and reverse 
+            transcription using mmlv:
+
+            5'- xxxxxxxxxxxxxxxxxxxxxB - (a)30 (the poly-a tail)
+                           <--------NV - (t)30 - [10-bp umi] - tctagccttctcgtgtgcagacttgaggtcagtg - [14-bp cell barcode] - tagagcatacggcagaagacgaac -5'--|
+
+        (2) the terminal tranferase acitivity of mmlv adds extra C-s:
+
+            5'-    xxxxxxxxxxxxxxxxxxxxxb - (a)30
+             CCC - xxxxxxxxxxxxxxxxxxxxnv - (t)30 - [10-bp umi] - tctagccttctcgtgtgcagacttgaggtcagtg - [14-bp cell barcode] - tagagcatacggcagaagacgaac -5'--|
+
+        (3) adding tso for second strand synthesis:
+
+                                                [=================================] (this is the target m-RNA)
+            5'- AAGCAGTGGTATCAACGCAGAGTACATGGG - xxxxxxxxxxxxxxxxxxxxxb - (poly-a) ---------->
+                               <---------- CCC - xxxxxxxxxxxxxxxxxxxxnv - (poly-t) - [10-bp umi] - tctagccttctcgtgtgcagacttgaggtcagtg - [14-bp cell barcode] - tagagcatacggcagaagacgaac -5'--|
+
+        (4) adding ispcr and illumina p7 primers (this is presumably called 
+            "cdna primer mix" in the pdf manual) to amplify full length cdna:
+
+            5'- AAGCAGTGGTATCAACGCAGAGTACAT -------->
+            5'- aagcagtggtatcaacgcagagtacatggg - xxxxxxxxxxxxxxxxxxxxxb - (poly-a) - [10-bp umi] - agatcggaagagcacacgtctgaactccagtcac - [14-bp cell barcode] - atctcgtatgccgtcttctgcttg -3'
+            3'- ttcgtcaccatagttgcgtctcatgtaccc - xxxxxxxxxxxxxxxxxxxxnv - (poly-t) - [10-bp umi] - tctagccttctcgtgtgcagacttgaggtcagtg - [14-bp cell barcode] - tagagcatacggcagaagacgaac -5'--|
+                                                                                                                                                  <-------- TAGAGCATACGGCAGAAGACGAAC -5'
+
+        (5) use covaris to shear cdna and perform a-tailing:
+            covaris is an ultrasound based dna breaker.
+
+            product 1 (tso plus 5'-end of cdna):
+
+            5'-      aagcagtggtatcaacgcagagtacatggg - xxxxxxxxxxxxxxxxxx ... xxxxxxxxxxxxxxxxxx - *A -3'
+            3'- A* - ttcgtcaccatagttgcgtctcatgtaccc - xxxxxxxxxxxxxxxxxx ... xxxxxxxxxxxxxxxxxx      -5'
+
+            product 2 (middle of cdna):
+
+            5'-      xxxxxxxxxxxxxxxxxxxxxxxxx ... xxxxxxxxxxxxxxxxxxxxxxxxx - *a -3'
+            3'- a* - xxxxxxxxxxxxxxxxxxxxxxxxx ... xxxxxxxxxxxxxxxxxxxxxxxxx      -5'
+
+            product 3 (3' of cdna, umi, illumina truseq read 2 sequence, cell 
+            barcode and illumina p7 sequence):
+
+            5'-      xxxxx...xxxxxxb - (poly-a) - [10-bp umi] - agatcggaagagcacacgtctgaactccagtcac - [14-bp cell barcode] - atctcgtatgccgtcttctgcttg*a -3'
+            3'- a* - xxxxx...xxxxxnv - (poly-t) - [10-bp umi] - tctagccttctcgtgtgcagacttgaggtcagtg - [14-bp cell barcode] - tagagcatacggcagaagacgaac -5'
+
+        (6) add double stranded illumina truseq adapter (with a t overhang) 
+            for ligation:
+
+            product 1 (i assume the 5' end of tso is blocked, so the adapter 
+            can only be ligated to the cdna end. this product is not amplifiable 
+            due to the use of the specific primers for amplification, 
+            see the next step):
+
+            5'-      aagcagtggtatcaacgcagagtacatggg - xxxxxxxxxxxxxxxxxx ... xxxxxxxxxxxxxxxxxx - Agatcggaagagc -3'
+            3'- a* - ttcgtcaccatagttgcgtctcatgtaccc - xxxxxxxxxxxxxxxxxx ... xxxxxxxxxxxxxxxxxx - tctagccttctcgcagcacatccctttct -5'
+
+            product 2 (will not amplify efficiently due to semi-suppressive pcr??? 
+            not really sure about this):
+
+            5'- tctttccctacacgacgctcttccgatct - xxxxxxxxxxxxxxxxxxxx ... xxxxxxxxxxxxxxxxxxxx - Agatcggaagagc -3'
+            3'-                 cgagaaggctagA - xxxxxxxxxxxxxxxxxxxx ... xxxxxxxxxxxxxxxxxxxx - tctagccttctcgcagcacatccctttct -5'
+
+            product 3 (i assume the 5' end of illumina p7 primer is blocked, so 
+            the adapter can only be ligated to the cdna end. this is the only 
+            ampliable fragment):
+
+            5'- tctttccctacacgacgctcttccgatct - xxxxxx...xxxxxxb - (poly-a) - [10-bp umi] - agatcggaagagcacacgtctgaactccagtcac - [14-bp cell barcode] - atctcgtatgccgtcttctgcttg*a -3'
+            3'-                 cgagaaggctaga - xxxxxx...xxxxxnv - (poly-t) - [10-bp umi] - tctagccttctcgtgtgcagacttgaggtcagtg - [14-bp cell barcode] - tagagcatacggcagaagacgaac   -5'
+
+        (7) add si-pcr primer and illumina p7 primer to index and amplify library:
+
+            5'- aatgatacggcgaccaccgagatctacac - [8-bp sample index] - acactctttccctacacgacgctcttccgatct --------->
+                                                                      5'- tctttccctacacgacgctcttccgatct - xxx ... xxxb - (poly-a) - [10-bp umi] - agatcggaagagcacacgtctgaactccagtcac - [14-bp cell barcode] - atctcgtatgccgtcttctgcttg*a -3'
+                                                                      3'-                 cgagaaggctaga - xxx ... xxxv - (poly-t) - [10-bp umi] - tctagccttctcgtgtgcagacttgaggtcagtg - [14-bp cell barcode] - tagagcatacggcagaagacgaac   -5'
+                                                                                                                                                                                                 <----------- tagagcatacggcagaagacgaac   -5'
+
+        (8) final library structure:
+
+            5'- aatgatacggcgaccaccgagatctacac - nnnnnnnn - acactctttccctacacgacgctcttccgatct - xxx ... xxxb - (poly-a) - nnnnnnnnnn - agatcggaagagcacacgtctgaactccagtcac - nnnnnnnnnnnnnn - atctcgtatgccgtcttctgcttg -3'
+            3'- ttactatgccgctggtggctctagatgtg - nnnnnnnn - tgtgagaaagggatgtgctgcgagaaggctaga - xxx ... xxxv - (poly-t) - nnnnnnnnnn - tctagccttctcgtgtgcagacttgaggtcagtg - nnnnnnnnnnnnnn - tagagcatacggcagaagacgaac -5'
+                <===========================>   <======>   <===============================>   <=====================>   <========>   <================================>   <============>   <======================>
+                       illumina p5                8 bp              truseq read 1 -->                    cdna             10 bp umi              <-- truseq read 2        14 bp cell barcode       illumina p7
+                                              sample index                                                                                           
+
+    
+    1.2 library sequencing
+    ======================
+
+        (1) add truseq read 1 primer to sequence the first read (bottom strand 
+            as template, this the cdna read, 98  cycles):
+
+            sequence region                                                                    <===98===>
+            5'-                                            acactctttccctacacgacgctcttccgatct -------->
+            3'- ttactatgccgctggtggctctagatgtg - nnnnnnnn - tgtgagaaagggatgtgctgcgagaaggctaga - xxx ... xxxv (poly-t) - nnnnnnnnnn - tctagccttctcgtgtgcagacttgaggtcagtg - nnnnnnnnnnnnnn - tagagcatacggcagaagacgaac -5'
+
+        (2) add cell barcode sequencing primer to sequence the cell barcode 
+            (bottom strand as template, in this case, cell barcode = i7 index, 14 cycles):
+
+                                                                                                                                 5'- gatcggaagagcacacgtctgaactccagtcac -------------->
+            3'- ttactatgccgctggtggctctagatgtg - nnnnnnnn - tgtgagaaagggatgtgctgcgagaaggctaga - xxx ... xxxv (poly-t) - nnnnnnnnnn - tctagccttctcgtgtgcagacttgaggtcagtg - nnnnnnnnnnnnnn - tagagcatacggcagaagacgaac -5'
+            sequence region                                                                                                                                              <=====14=====>
+        
+        (3) cluster regeneration, add sample index sequencing primer (index2) to
+            sequence the sample index (i5) (top strand as template, 8 cycles):
+
+            sequence region                     <==8===>
+            5'- aatgatacggcgaccaccgagatctacac - nnnnnnnn - acactctttccctacacgacgctcttccgatct - xxx ... xxxb (poly-a) - nnnnnnnnnn - agatcggaagagcacacgtctgaactccagtcac - nnnnnnnnnnnnnn - atctcgtatgccgtcttctgcttg -3'
+                                                  <------- tgtgagaaagggatgtgctgcgagaaggctaga -5'
+
+        (4) add truseq read 2 primer to sequence the umi (top strand as template, 
+            sequence umi, 10 cycles):
+
+            sequence region                                                                                            <===10===>
+            5'- aatgatacggcgaccaccgagatctacac - nnnnnnnn - acactctttccctacacgacgctcttccgatct - xxx ... xxxb (poly-a) - nnnnnnnnnn - agatcggaagagcacacgtctgaactccagtcac - nnnnnnnnnnnnnn - atctcgtatgccgtcttctgcttg -3'
+                                                                                                                         <--------- tctagccttctcgtgtgcagacttgaggtcagtg -5'
+    
+    1.3 pipeline
+    ============
+
+        the v1 chemistry is already obsolete, but i'm still providing the 
+        preprocessing pipeline for the sake of keeping a record. although it is 
+        highly unlikely that you will do this on your own in future, but just in 
+        case, this is the configuration:
+
+        Read	        Cycle	Description
+        --------------- ------- ------------------------------------------------
+        read 1	        >50	    normally yields r1_001.fastq.gz, cdna reads
+        index 1 (i7)	14	    normally yields i1_001.fastq.gz, cell barcodes
+        index 2 (i5)	8	    normally yields i2_001.fastq.gz, sample index
+        read 2	        10	    normally yields r2_001.fastq.gz, umi
+
+        look at the order of the sequencing, as you can see, the first (`r1`), 
+        the 2nd (`i1`) and the 4th (`r2`) reads are all important for us. 
+        therefore, you would like to get all of them for each sample based on 
+        sample index, that is, the 3rd read (`i2`). you could prepare a 
+        `samplesheet.csv` with the sample index information. here is an example 
+        of `samplesheet.csv` of a nextseq run with a sample using standard `i5` 
+        indexing primers:
+
+        sample_id   i5_index_id     index2      sample_project  description
+        ----------- --------------- ----------- --------------- ----------------
+        sample01    si-ga-a1_1      aggctggt    
+        sample01    si-ga-a1_2      cacaacta    
+        sample01    si-ga-a1_3      gttggtcc    
+        sample01    si-ga-a1_4      ttgtaaga    
+
+        you can see each sample actually has four different index sequences. 
+        this is because each well from the index plate actually contains four 
+        different indices for base balancing. to get the reads you need, you 
+        should run `bcl2fastq` in the following way:
+
+            bcl2fastq --use-bases-mask=Y75,Y14,I8,Y10 \
+                      --create-fastq-for-index-reads \
+                      --no-lane-splitting \
+                      --ignore-missing-positions \
+                      --ignore-missing-controls \
+                      --ignore-missing-filter \
+                      --ignore-missing-bcls \
+                      -r 4 -w 4 -p 4
+        
+        the important bit that needs explanation is 
+        `--use-bases-mask=Y75,Y14,I8,Y10`. we have four reads, and that parameter 
+        specify how we treat each read in the stated order:
+
+        1. `y75` at the first position indicates "use the cycle as a real read", 
+           so you will get 75-nt sequences, output as `r1_001.fastq.gz`, because 
+           this is the 1st real read.
+
+        2. `y14` at the second position indicates "use the cycle as a real read", 
+           so you will get 14-nt sequences, output as `r2_001.fastq.gz`, 
+           because this is the 2nd real read.
+
+        3. `i8` at the third position indicates "use the cycle as an index read", 
+           so you will get 8-nt sequences, output as `i1_001.fastq.gz`, because 
+           this is the 1st index read, though it is the 3rd read overall.
+
+        4. `y10` at the fourth position indicates "use the cycle as a real read", 
+           so you will get 10-nt sequences, output as `r3_001.fastq.gz`, because 
+           this is the 3rd real read, though it is the 4th read overall.
+
+        therefore, you will get four fastq file per sample. using the examples 
+        above, these are the files you should get:
+
+            sample01_s1_i1_001.fastq.gz # 8 bp: sample index
+            sample01_s1_r1_001.fastq.gz # 75 bp: cdna reads
+            sample01_s1_r2_001.fastq.gz # 14 bp: cell barcodes
+            sample01_s1_r3_001.fastq.gz # 10 bp: umi
+        
+        to run `starsolo`, we need to get the cell barcodes and the umi into the 
+        same fastq file. this can be simply achieved by stitching `r2` and `r3` 
+        together:
+
+            paste <(zcat sample01_s1_r2_001.fastq.gz) \
+                  <(zcat sample01_s1_r3_001.fastq.gz) | \
+                  awk -f '\t' '{ if( nr % 4 == 1 || nr % 4 == 3 ) { print $1 } else { print $1 $2 } }' | \
+                  gzip > sample01_s1_cb_umi.fastq.gz
+
+        in reality, it is better to run `bcl2fastq` with the 
+        `--create-fastq-for-index-reads` flag without a `samplesheet.csv`. you 
+        should get four fastq files per experiment:
+
+            undetermined_s0_i1_001.fastq.gz    # cell barcodes (14 bp)
+            undetermined_s0_i2_001.fastq.gz    # sample index (8 bp)
+            undetermined_s0_r1_001.fastq.gz    # cdna reads (98 bp)
+
+
+    1.4 working with real files
+    ===========================
+
+        however, the files from the 10x website are __not__ like that because 
+        they demultiplexed the sample based on `i2`. they used different sample 
+        indices even though there is only one sample. the sample was also split 
+        into different flow cells and lanes. that is why there are so many files, 
+        but essentially, they are all from the same sample.
+
+        we can safely ignore all the `i2` files, and just look at the `i1` 
+        (cell barcodes) and `ra` (cdna + umi) files. if you look at the content 
+        of any `ra` file, you will realise that they are interleaved `fastq` files, 
+        containing cdna and umi reads next to each other. for example, these are 
+        the first 16 lines (4 records) of an ra file:
+
+            @NB500915:156:HYKFKBGXX:1:11101:14387:1086 1:N:0:0
+            TTCCTGGCCGCCAGAAGATCCACATCTCAAAGAAGTGGGGCTTCACCAAGTTCAATGCTGATGAATTTGAAGACATGGTGGCTGAAAAGCGGCTCATC
+
+            @NB500915:156:HYKFKBGXX:1:11101:14387:1086 4:N:0:0
+            GCACGNGNTN
+
+            @NB500915:156:HYKFKBGXX:1:11101:25884:1109 1:N:0:0
+            GACCTTTTGGCATGGCCCAGACTGGGGTGCCCTTTGGGGAAGTAAGCATGGTCCGGGACTGGTTGGGCATTGTGGGGCGTGTGCTGACCCATACCCAA
+
+            @NB500915:156:HYKFKBGXX:1:11101:25884:1109 4:N:0:0
+            GTAGTTTTGG
+
+        to use `starsolo`, we need to prepare `fastq` files into a file 
+        containing cdna reads and a file with cell barcode + umi. to get the 
+        cdna reads, we need every other read from the `ra` file.
+
+        The barcodes on the gel beads of the 10x Genomics platform are well 
+        defined. We need the information for the `V1` chemistry.
+
+            <see ./v1-barcodes.txt.gz>
+
+        now we could start the preprocessing by simply doing:
+        
+            STAR --runThreadN 4 \
+                 --genomeDir ./../star_index \
+                 --readFilesCommand zcat \
+                 --outFileNamePrefix ./star_outs/ \
+                 --readFilesIn cdna_reads.fastq.gz cb_umi_reads.fastq.gz \
+                 --soloType CB_UMI_Simple \
+                 --soloCBstart 1 --soloCBlen 14 --soloUMIstart 15 --soloUMIlen 10 \
+                 --soloCBwhitelist v1-barcodes.txt \
+                 --soloCellFilter EmptyDrops_CR \
+                 --soloStrand Forward \
+                 --outSAMattributes CB UB \
+                 --outSAMtype BAM SortedByCoordinate
+
+        `--soloType CB_UMI_Simple`
+
+            most of the time, you should use this option, and specify the 
+            configuration of cell barcodes and umi in the command line (see 
+            immediately below). sometimes, it is actually easier to prepare 
+            the cell barcode and umi file upfront so that we could use this 
+            parameter. that is why went through those procedures to reformat 
+            the `fastq` files.
+
+        `--soloCBstart 1 --soloCBlen 14 --soloUMIstart 15 --soloUMIlen 10`
+
+            the name of the parameter is pretty much self-explanatory. if using 
+            `--solotype cb_umi_simple`, we can specify where the cell barcode 
+            and umi start and how long they are in the reads from the first 
+            file passed to `--readfilesin`. note the position is 1-based (the 
+            first base of the read is 1, not 0).
+
+        `--soloCBwhitelist v1-barcodes.txt`
+
+            the plain text file containing all possible valid cell barcodes, 
+            one per line. __10x genomics single cell 3' v1__ is a commercial 
+            platform. the whitelist is taken from their `cellranger`.
+
+        `--soloCellFilter EmptyDrops_CR`
+
+            experiments are never perfect. even for droplets that do not contain 
+            any cell, you may still get some reads. in general, the number of 
+            reads from those droplets should be much smaller, often orders of 
+            magnitude smaller, than those droplets with cells. in order to 
+            identify true cells from the background, you can apply different 
+            algorithms. check the `star` manual for more information. we use 
+            `emptydrops_cr` which is the most frequently used parameter. 
+
+        `--soloStrand Forward`
+
+            the choice of this parameter depends on where the cdna reads come 
+            from, i.e. the reads from the first file passed to `--readfilesin`. 
+            you need to check the experimental protocol. if the cdna reads are 
+            from the same strand as the mrna (the coding strand), this parameter 
+            will be `forward` (this is the default). if they are from the 
+            opposite strand as the mrna, which is often called the first strand, 
+            this parameter will be `reverse`. in the case of 10x v1, the cdna 
+            reads are from the read 1 file. during the experiment, the mrna 
+            molecules are captured by barcoded oligo-dt primer containing the 
+            illumina read 2 sequence. therefore, read 2 comes from the first 
+            strand, complementary to the coding strand. read 1 comes from the 
+            coding strand. therefore, use `forward` for 10x v1 data. 
+            this `forward` parameter is the default, because many protocols 
+            generate data like this, but i still specified it here to make it clear.
+
+        `--outSAMattributes CB UB`
+
+            we want the cell barcode and umi sequences in the `cb` and `ub` 
+            attributes of the output, respectively. the information will be 
+            very helpful for downstream analysis. 
+
+        `--outSAMtype BAM SortedByCoordinate`
+
+            we want sorted `bam` for easy handling by other programs.
+
+
+2   3'v2 protocol & 3'v3 3'v4 protocols
+=======================================
+
+    the v2 chemistry was developed soon after the v1. it immediately became very 
+    popular and was widely used in the community. the oligo sequence information 
+    is taken from the 10x genomics technical note. you can find out all the v2 
+    cell barcodes (16 bp) here: <./v2-barcodes.txt.gz> this file is copied from 
+    cell ranger (using cell ranger v2.1.0 as an example) 
+    /cellranger-2.1.0/cellranger-cs/2.1.0/tenkit/lib/python/tenkit/barcodes. 
+    the v2 chemistry is also discontinued now.
+
+    in 2018, the v3 and v3.1 chemistries were released. the new chemistries gave 
+    better sensitivity (detects more genes) comparing to v2. in addition, the 
+    oligo beads are modified to support feature barcoding. in terms of the 3' 
+    gene expression library preparation, there are only a few nucleotide 
+    differences for some oligos. the final library structure is exactly the same, 
+    except that the umi is 10-bp long in v2 but 12-bp in v3 and v3.1. the cell 
+    barcodes whitelist for the v3 and v3.1 chemistries are the same, and it can 
+    be found here: <./v3-barcodes.txt.gz>. this file is copied from the cell 
+    ranger software (using cell ranger v3.1.0 as an example): 
+    cellranger-3.1.0/cellranger-cs/3.1.0/lib/python/cellranger/barcodes/
+
+    around 2023-2024, the v4 chemistry was introduced. it has some further 
+    improvements over the previous versions. the v4 chemistry has better cell 
+    recovery and sensitivity (number of detected genes per cell) compared to v3 
+    and v3.1. see their product sheet for a more detailed overview. the cell 
+    barcodes have changed again in the v4 chemistry, and the file with all 16-bp 
+    cell barcodes can be found here: <./v4-barcodes.txt.gz>. this file is copied 
+    from cell ranger (using cell ranger v8.0.1 as an example) 
+    /cellranger-8.0.1/lib/python/cellranger/barcodes/. 
+    the library structure of v4 is exactly the same as v3 and v3.1.
+
+    adapter and primer sequences:
+    
+    beads-oligo-dt:
+
+                    V2: |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI](T)30VN -3'
+          V3, V3.1, V4: |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][12-bp UMI](T)30VN -3'
+
+    template switching oligo (tso): 
+    
+        5'- AAGCAGTGGTATCAACGCAGAGTACATrGrGrG -3'
+
+    cdna forward primer: 
+    
+        5'- CTACACGACGCTCTTCCGATCT -3'
+
+    cdna reverse primer:
+
+                    V2: 5'- AAGCAGTGGTATCAACGCAGAGTACAT -3'
+          V3, V3.1, V4: 5'- AAGCAGTGGTATCAACGCAGAG -3'
+
+    illumina truseq read 1 primer: 
+        
+        5'- ACACTCTTTCCCTACACGACGCTCTTCCGATCT -3'
+
+    illumina truseq read 2 primer: 
+    
+        5'- GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT -3'
+
+    truseq adapter (double stranded dna with a t overhang):
+
+                  V2: 5'-  GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+                      3'- TCTAGCCTTCTCG -5'
+
+        V3, V3.1, V4: 5'-  GATCGGAAGAGCACACGTCTGAACTCCAGTCA -3'
+                      3'- TCTAGCCTTCTCG -5'
+
+    library pcr primer 1: 
+    
+        5'- AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTC -3'
+
+    library pcr primer 2: 
+    
+        5'- CAAGCAGAAGACGGCATACGAGAT[8-bp sample index]GTGACTGGAGTTCAGACGTGT -3'
+
+    sample index sequencing primer: 
+    
+        5'- GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+
+    illumina p5 adapter: 
+    
+        5'- AATGATACGGCGACCACCGAGATCTACAC -3'
+
+    illumina p7 adapter: 
+    
+        5'- CAAGCAGAAGACGGCATACGAGAT -3'
+    
+    
+    2.1 library generation
+    ======================
+
+        (1) mrna capture using beads-oligo-dt in the droplets, and reverse 
+            transcription using mmlv:
+
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI](T)30VN-------->
+                                                                        (A)30BXXXXXXXXXXXXXXXXXXXXX -5'
+
+        (2) the terminal tranferase acitivity of mmlv adds extra cs:
+
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI](dT)VXXXXXXXXX...XXXXXXXXXCCC -3'
+                                                                        (pA)BXXXXXXXXX...XXXXXXXXX    -5'
+
+        (3) adding tso for second strand synthesis:
+
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI](dT)VXXXXXXXXX...XXXXXXXXXCCC------->
+                                                               <--------(pA)BXXXXXXXXX...XXXXXXXXXGGGTACATGAGACGCAACTATGGTGACGAA    -5'
+
+        (4) adding cdna forward and reverse primers to amplify full length cdna:
+
+               5'- CTACACGACGCTCTTCCGATCT-------->
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI](dT)VXXXXXXXXX...XXXXXXXXXCCCATGTACTCTGCGTTGATACCACTGCTT -3'
+               3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI](pA)BXXXXXXXXX...XXXXXXXXXGGGTACATGAGACGCAACTATGGTGACGAA -5'
+                                                                                            <--------TACATGAGACGCAACTATGGTGACGAA -5'
+
+        (5) use fragmentase to fragment cdna and perform a-tailing:
+
+            product 1 (tso plus 5'-end of cdna):
+
+            5'-   AAGCAGTGGTATCAACGCAGAGTACATGGGXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXX*A -3'
+            3'- A*TTCGTCACCATAGTTGCGTCTCATGTACCCXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXX   -5'
+
+            product 2 (middle of cdna):
+
+            5'-   XXXXXXXXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXXXXXX*A -3'
+            3'- A*XXXXXXXXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXXXXXX   -5'
+
+            product 3 (illumina read 1 sequence, cell barcode, umi plus 3' of cdna):
+
+            5'-   CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI](dT)VXXXXXXXXX...XXXXXXXXX*A -3'
+            3'- A*GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI](pA)BXXXXXXXXX...XXXXXXXXX   -5'
+
+        (6) add double stranded illumina truseq adapter (with a t overhang) for 
+            ligation:
+
+            product 1 (i assume the 5' end of tso is blocked, so the adapter can 
+            only be ligated to the cdna end. this product is not amplifiable due 
+            to the use of the specific primers for amplification, see the next step):
+
+            5'-   AAGCAGTGGTATCAACGCAGAGTACATGGGXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+            3'- A*TTCGTCACCATAGTTGCGTCTCATGTACCCXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXTCTAGCCTTCTCG -5'
+
+            product 2 (not really sure about this):
+
+            5'-                      GCTCTTCCGATCTXXXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+            3'- CACTGACCTCAAGTCTGCACACGAGAAGGCTAGAXXXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXTCTAGCCTTCTCG -5'
+
+            product 3 (i assume the 5' end of illumina read1 primer is blocked, 
+            so the adapter can only be ligated to the cdna end. this is the only 
+            ampliable fragment):
+
+            5'-   CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI](dT)VXXX...XXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+            3'- A*GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI](pA)BXXX...XXXTCTAGCCTTCTCG -5'
+
+        (7) add library pcr primers 1 & 2 to amplify library:
+
+            5'-  AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTC--------->
+                                               5'-   CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI](dT)VXXX...XXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+                                               3'- A*GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI](pA)BXXX...XXXTCTAGCCTTCTCG                      -5'
+                                                                                                                         <-----------TGTGCAGACTTGAGGTCAGTG[8-bp sample index]TAGAGCATACGGCAGAAGACGAAC -5'
+
+        (8) final library structure:
+
+            V2 library:
+
+            5'- AATGATACGGCGACCACCGAGATCTACAC - TCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNNNNNNN - (dT)VXXX...XXX - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+            3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNNNNNNN - (pA)BXXX...XXX - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                <===========================>   <===========================>   <==============>   <========>   <============>   <================================>   <======>   <======================>
+                          Illumina P5                    Truseq Read 1         16 bp cell barcode   10 bp UMI         cDNA                 Truseq Read 2           8 bp Sample Index    Illumina P7
+                                                                                                                                  
+            V3, V3.1 & V4 library:
+
+            5'- AATGATACGGCGACCACCGAGATCTACAC - TCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - (dT)VXXX...XXX - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+            3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - (pA)BXXX...XXX - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                <===========================>   <===========================>   <==============>   <==========>   <============>   <================================>   <======>   <======================>
+                          Illumina P5                    Truseq Read 1         16 bp cell barcode    12 bp UMI          cDNA                 Truseq Read 2           8 bp Sample Index    Illumina P7
+
+    
+    2.3 library sequencing
+    ======================
+
+        (1) add truseq read 1 primer to sequence the first read (bottom strand 
+            as template, sequence 16-bp cell barcode and 10-bp umi, 26 cycles 
+            for v2, 28 cycles for v3, v3.1 & v4):
+
+                                     5'- ACACTCTTTCCCTACACGACGCTCTTCCGATCT------------------------->
+            3'- ttactatgccgctggtggctctagaTGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGAnnnnnnnnnnnnnnnnnnnnnnnnnn(pA)BXXX...XXXTCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+        (2) add sample index sequencing primer to sequence the sample index 
+            (bottom strand as template):
+
+                                                                                                               5'- gatcggaagagcacacgtctgaactccagtcac------->
+            3'- TTACTATGCCGCTGGTGGCTCTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGANNNNNNNNNNNNNNNNNNNNNNNNNN(pA)BXXX...XXXTctagccttctcgtgtgcagacttgaggtcagtgNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+        (3) cluster regeneration, add truseq read 2 primer to sequence the 
+            second read (top strand as template, sequence cdna, 98 cycles):
+
+            5'- AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCTNNNNNNNNNNNNNNNNNNNNNNNNNN(dT)VXXX...XXXagatcggaagagcacacgtctgaactccagtcacNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+                                                                                                            <-----tctagccttctcgtgtgcagacttgaggtcagtg -5'
+    
+    
+    2.4 processing data generated using v2
+    ======================================
+
+        Read	        Cycle	        Description
+        --------------- --------------- ----------------------------------------
+        Read 1	        26	            R1.fastq.gz, 16 bp cell barcodes + 10 bp UMI
+        Index 1 (i7)	8 or 10	        I1.fastq.gz, Sample index
+        Index 2 (i5)	8 or 10 or None	I2.fastq.gz, Sample index (if using dual index)
+        Read 2	        >50	            R2.fastq.gz, cDNA reads
+
+        many experimeents were conducted using the v2 toolkit. here we may
+        present one of them, from the ENA archive.
+
+        wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR962/006/SRR9621416/SRR9621416_1.fastq.gz
+        wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR962/006/SRR9621416/SRR9621416_2.fastq.gz
+
+        you may run star using
+
+        STAR --runThreadN 4 \
+             --genomeDir ... \
+             --readFilesCommand zcat \
+             --outFileNamePrefix ... \
+             --readFilesIn barcode-umi-2.fastq.gz cdna-1.fastq.gz \
+             --soloType CB_UMI_Simple \
+             --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 10 \
+             --soloCBwhitelist v2-barcodes.txt \
+             --soloCellFilter EmptyDrops_CR \
+             --soloStrand Forward \
+             --outSAMattributes CB UB \
+             --outSAMtype BAM SortedByCoordinate
+
+            
+    2.5 processing data generated using v3
+    ======================================
+
+        Read	        Cycle	        Description
+        --------------- --------------- ----------------------------------------
+        Read 1	        28	            R1.fastq.gz, 16 bp cell barcodes + 12 bp UMI
+        Index 1 (i7)	8 or 10	        I1.fastq.gz, Sample index
+        Index 2 (i5)	8 or 10 or None	I2.fastq.gz, Sample index (if using dual index)
+        Read 2	        >50	            R2.fastq.gz, cDNA reads
+
+        many experimeents were conducted using the v2 toolkit. here we may
+        present one of them, from the ENA archive.
+
+        wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR105/009/SRR10587809/SRR10587809_1.fastq.gz
+        wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR105/009/SRR10587809/SRR10587809_2.fastq.gz
+
+        you may run star using
+
+        STAR --runThreadN 4 \
+             --genomeDir ... \
+             --readFilesCommand zcat \
+             --outFileNamePrefix ... \
+             --readFilesIn barcode-umi-2.fastq.gz cdna-1.fastq.gz \
+             --soloType CB_UMI_Simple \
+             --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12 \
+             --soloCBwhitelist v3-barcodes.txt \
+             --soloCellFilter EmptyDrops_CR \
+             --soloStrand Forward \
+             --outSAMattributes CB UB \
+             --outSAMtype BAM SortedByCoordinate
+
+        things are generally the save between v2 and v3.
+
+
+3   feature-barcoding 3' sequencing
+===================================
+
+    since the v3 chemistry introduced in 2018, the oligo beads are modified to 
+    support feature barcoding. each bead has three types of oligos, one for gene 
+    expression and the other two for feature barcoding. 
+    
+    note: the cell barcodes used for rna and feature are different in the same 
+    drop. you need a mapping file to tell you the mapping between rna cell 
+    barcodes and feature cell barcodes. this file can be found from the 
+    cell-ranger software. the path is 
+    cellranger-6.0.2/lib/python/cellranger/barcodes/translation/
+    i copied this file and renamed it to this repository. you can download this 
+    file from here: <./barcode-translation.txt.gz>.
+
+    in 2024, 10x genomics introduced the v4 chemistry. the library structure of 
+    v4 is exactly the same as v3 and v3.1. however, the v4 chemistry uses a 
+    different set of cell barcodes and it has better cell recovery and 
+    sensitivity (number of detected genes per cell) compared to v3 and v3.1. see 
+    their product sheet for a more detailed overview. since the cell barcodes 
+    have changed in the v4 chemistry, i assume that the mapping file 
+    (translation between rna cell barcodes and feature cell barcodes) has also 
+    changed. here <./v4-barcode-translation.txt.gz>
+
+    feature barcoding allows you to profile surface protein abundance by using 
+    oligo-conjugated antibodies (basically cite-seq) and crispr screening by 
+    capture sgrna on top of gene expression. the antibody part is relatively 
+    easy to do and understand. i feel it is necessary to explain a bit more 
+    about the crispr screening part. at least i did not understand it when i 
+    first saw the kit. now i will try to explain.
+
+    the sgrna has two parts: a 17-20 nt so-called protospacer (or just spacer) 
+    that determines the specificity of the target, followed by a constant region 
+    called sgrna scaffold that forms different loop structures. your sgrna 
+    structure is like this:
+    
+                                        __           [hairpins]
+                                        ||           __
+                           [upper stem] ||           || __
+                [sg-rna]       [bulge] (  ) [nexus]  || ||
+                [spacer]   [lower stem] ||  ()       || ||
+                5' ---------------------||--||-------||-||--> 3'
+
+    Your sgRNA is often driven and transcribed by a U6 promoter from a vector 
+    backbone. There are a few different vector backbones for CRISPR screening. 
+    The exact sgRNA scaffold sequences vary among them. If you use the following 
+    backbones:
+
+    [addgene #52961 backbone]
+
+        5'- XXXXXX-GUUUUA-GA-GCUA-GAAA-UAGC-AAGU-UAAAAU-AA-GGCUAGUCCGU-UAUCAACUUGAAAAAGUGGCACCGAGUCGGUGC-UUUUUU -3'
+            spacer    |   |    |< upper >|    |     |      <- nexus -> <------------ hairpins ---------------->
+                      |   |<----- bulge ----->|     |
+                      |<--------- lower ----------->|
+
+    or: [perturb-seq backbone]
+
+        5'- GUUUAAGAGCUAAGCUGGAAACAGCAUAGCAAGUUUAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCUUUUUUU -3'
+
+    based on the 10x guide on sgrna, it seems they assume you are using the 
+    perturb-seq backbone, but i guess other backbones can also work. here, i 
+    will just use the perturb-seq sgrna scaffold as an example to be consistent. 
+    you need to add a sequence that is reverse complementary (rc) to the capture 
+    sequence that is on the v3 beads. you have two choices (pick one of them):
+
+    capture sequence 1 rc: 
+    
+        5'- GCTTTAAGGCCGGTCCTAGCAA -3'
+
+    capture sequence 2 rc: 
+    
+        5'- GCTCACCTATTAGCGGCTAAGG -3'
+
+    you may insert either of these capture sequences here (choose one locus) in
+    your genetic construct for library construction:
+
+                                                     
+                                        __             either reolacing these 4
+                                        ||           ↓ nt's with the capture seq.
+                                        ||           __
+                                        ||           || __
+                                       (  )          || ||
+                [spacer]                ||  ()       || ||
+                5' ---------------------||--||-------||-||--> 3'
+                                                          ↑ or insert here 
+                                                            before poly-u
+
+    for example, you choose to insert before poly u, and here is one occasion
+    you might have:
+
+        5'- [spacer] - GUUUAAGAGCUAAGCUGGAAACAGCAUAGCAAGUUUAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGC - [capture] - UUUUUUU -3'
+    
+
+    3.1 adaptors
+    ============
+
+        beads-oligos (there are three types of sequences):
+
+            truseq partial read1 dt (for mrna):
+                |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][12-bp UMI](T)30 -3'
+
+            nextera partial read1 capture sequence 1 (for surface protein & crispr screening):
+                |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGC -3'
+
+            nextera partial read1 capture sequence 2 (for crispr screening):
+                |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]CCTTAGCCGCTAATAGGTGAGC -3'
+
+        template switching oligo (tso): 
+        
+            5'- AAGCAGTGGTATCAACGCAGAGTACATrGrGrG -3'
+
+        dna oligos from the antibody: 
+            
+            5'- GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT[random 9-mer][15-bp antibody barcodes][random 9-mer]GCTTTAAGGCCGGTCCTAGCAA -3'
+
+        sgrna transcripts, two possiblilities depending on the capture sequence 
+        of choice (see above explanation):
+
+            5'- [Protospacer]GUUUAAGAGCUAAGCUGGAAACAGCAUAGCAAGUUUAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCGCTTTAAGGCCGGTCCTAGCAAUUUUUUU -3'
+            5'- [Protospacer]GUUUAAGAGCUAAGCUGGAAACAGCAUAGCAAGUUUAAAUAAGGCUAGUCCGUUAUCAACUUGAAAAAGUGGCACCGAGUCGGUGCGCTCACCTATTAGCGGCTAAGGUUUUUUU -3'
+
+        feature cdna primers 1 (pn-2000096, for crispr screening), this is a 
+        mixture of the following 3 primers:
+
+            primers to amplify cdna from mrna:
+            forward primer: 5'- CTACACGACGCTCTTCCGATCT -3'
+            reverse primer: 5'- AAGCAGTGGTATCAACGCAGAG -3'
+
+            primers to amplify cdna from sgrna:
+            forward primer: 5'- GCAGCGTCAGATGTGTATAAGAGACAG -3'
+            reverse primer: 5'- AAGCAGTGGTATCAACGCAGAG -3'
+
+        feature cdna primers 2 (pn-2000097, for surface protein), this is a 
+        mixture of the following 4 primers:
+
+            primers to amplify cdna from mrna:
+            forward primer: 5'- CTACACGACGCTCTTCCGATCT -3'
+            reverse primer: 5'- AAGCAGTGGTATCAACGCAGAG -3'
+
+            primers to amplify cdna from surface protein:
+            forward primer: 5'- GCAGCGTCAGATGTGTATAAGAGACAG -3'
+            reverse primer: 5'- GTGACTGGAGTTCAGACGT -3'
+
+        feature si primers 1 (pn-2000098, only used for crispr screening), this is a 
+        mixture of the following two primers:
+
+            forward primer: 5'- AATGATACGGCGACCACCGAGATCTACACTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG -3'
+            reverse primer: 5'- GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCTAAGCAGTGGTATCAACGCAGAG -3'
+
+        feature si primers 2 (pn-2000099): 
+        
+            5'- AATGATACGGCGACCACCGAGATCTACACTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG -3'
+
+        chromium i7 sample index (pn-220103) primer: 
+        
+            5'- CAAGCAGAAGACGGCATACGAGAT[8-bp sample index]GTGACTGGAGTTCAGACGTGT -3'
+
+        illumina truseq read 1 primer: 
+        
+            5'- ACACTCTTTCCCTACACGACGCTCTTCCGATCT -3'
+
+        illumina nextera read 1 primer: 
+        
+            5'- TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG -3'
+
+        illumina truseq read 2 primer: 
+        
+            5'- GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT -3'
+
+        sample index sequencing primer: 
+        
+            5'- GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+
+        illumina p5 adapter: 
+        
+            5'- AATGATACGGCGACCACCGAGATCTACAC -3'
+
+        illumina p7 adapter: 
+        
+            5'- CAAGCAGAAGACGGCATACGAGAT -3'
+
+    3.2 library construction
+    ========================
+
+        (1) mrna, antibody oligo and sgrna capture by beads-oligos in the 
+            droplets, and reverse transcription using mmlv (mmlv has 
+            dna-dependent dna polymerase activity, therefore, it will reverse 
+            transcribe the antibody oligos as well even though they are dna):
+
+            mrna (omitted for the next step):
+
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][12-bp UMI](T)30-------->
+                                                                        (A)30XXXXXXXXXXXXXXXXXXXX -5'
+
+            antibody oligos (assuming the 3' of the antibody oligo is 
+            blocked for extension):
+
+            |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGC-------->
+                                                                    3'- AACGATCCTGGCCGGAATTTCG[random 9-mer][15-bp antibody barcodes][random 9-mer]TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+
+            sgrna: if using capture sequence 1:
+
+            |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGC-------->
+                                                                       .AACGATCCTGGCCGGAATTTCGCGUGGCUGAGCCACGGUGAAAAAGUUCAACUAUUGCCUGAUCGGAAUAAAUUUGAACGAUACGACAAAGGUCGAAUCGAGAAUUUG[Protospacer] -5'
+                                                            3'- UUUUUUU
+
+        
+        (2) the terminal tranferase acitivity of mmlv adds extra cs:
+
+            antibody oligos:
+
+            |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGC[random 9-mer][15-bp antibody barcodes][random 9-mer]AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCCC -3'
+                                                                    3'- AACGATCCTGGCCGGAATTTCG[random 9-mer][15-bp antibody barcodes][random 9-mer]TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG    -5'
+
+            sgrna: if using capture sequence 1:
+
+            |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGCGCACCGACTCGGTGCCACTTTTTCAAGTTGATAACGGACTAGCCTTATTTAAACTTGCTATGCTGTTTCCAGCTTAGCTCTTAAAC[Protospacer]CCC -3'
+                                                                       .AACGATCCTGGCCGGAATTTCGCGUGGCUGAGCCACGGUGAAAAAGUUCAACUAUUGCCUGAUCGGAAUAAAUUUGAACGAUACGACAAAGGUCGAAUCGAGAAUUUG[Protospacer]    -5'
+                                                            3'- UUUUUUU
+
+
+        (3) tso for template switching:
+
+            antibody oligos:
+
+            |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGC[random 9-mer][15-bp antibody barcodes][random 9-mer]AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCCC----------->
+                                                                    3'- AACGATCCTGGCCGGAATTTCG[random 9-mer][15-bp antibody barcodes][random 9-mer]TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGGGGTACATGAGACGCAACTATGGTGACGAA -5'
+
+            sgrna:
+
+            |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGCGCACCGACTCGGTGCCACTTTTTCAAGTTGATAACGGACTAGCCTTATTTAAACTTGCTATGCTGTTTCCAGCTTAGCTCTTAAAC[Protospacer]CCC----------->
+                                                                       .AACGATCCTGGCCGGAATTTCGCGUGGCUGAGCCACGGUGAAAAAGUUCAACUAUUGCCUGAUCGGAAUAAAUUUGAACGAUACGACAAAGGUCGAAUCGAGAAUUUG[Protospacer]GGGTACATGAGACGCAACTATGGTGACGAA -5'
+                                                            3'- UUUUUUU
+
+
+        (4) Adding Feature cDNA Primers for cDNA amplification:
+
+            (i) For surface protein profiling, add Feature cDNA Primers 2 
+                (PN-2000097) to amplify cDNAs from mRNA (omitted here) and 
+                antibody oligos:
+
+            5'- GCAGCGTCAGATGTGTATAAGAGACAG--------------->
+              |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGC[random 9-mer][15-bp antibody barcodes][random 9-mer]AGATCGGAAGAGCACACGTCTGAACTCCAGTCACCCCATGTACTCTGCGTTGATACCACTGCTT -3'
+                                                                                                                                                    <---------------TGCAGACTTGAGGTCAGTG -5'
+
+            (ii) For CRISPR screening, add Feature cDNA Primers 1 (PN-2000096) 
+                 to amplify cDNAs from mRNA (omitted here) and sgRNA:
+            
+            5'- GCAGCGTCAGATGTGTATAAGAGACAG--------------->
+              |--5'- GTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGCGCACCGACTCGGTGCCACTTTTTCAAGTTGATAACGGACTAGCCTTATTTAAACTTGCTATGCTGTTTCCAGCTTAGCTCTTAAAC[Protospacer]CCCATGTACTCTGCGTTGATACCACTGCTT -3'
+                                                                                                                                                                                          <----------------GAGACGCAACTATGGTGACGAA -5'
+
+        (5) after cdna amplification, the cdna from mrna will be mainly >1000 bp, 
+            the cdna from antibody oligos will be 129 bp and the cdna from sgrna 
+            will be ~210 bp. separate cdnas from mrna and antibody oligos/sgrna 
+            by size selection. this is the amplified cdna products from antibody 
+            oligos and sgrna:
+
+            (i) cdna from antibody oligos, this is ready for library pcr:
+
+            5'- GCAGCGTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGC[random 9-mer][15-bp antibody barcodes][random 9-mer]AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+            3'- CGTCGCAGTCTACACATATTCTCTGTC[16-bp cell barcode][12-bp UMI]AACGATCCTGGCCGGAATTTCG[random 9-mer][15-bp antibody barcodes][random 9-mer]TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+
+            (ii) cdna from sgrna, this product needs an extra step (see the next 
+                 step) before library pcr:
+
+            5'- GCAGCGTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGCGCACCGACTCGGTGCCACTTTTTCAAGTTGATAACGGACTAGCCTTATTTAAACTTGCTATGCTGTTTCCAGCTTAGCTCTTAAAC[Protospacer]CCCATGTACTCTGCGTTGATACCACTGCTT -3'
+            3'- CGTCGCAGTCTACACATATTCTCTGTC[16-bp cell barcode][12-bp UMI]AACGATCCTGGCCGGAATTTCGCGTGGCTGAGCCACGGTGAAAAAGTTCAACTATTGCCTGATCGGAATAAATTTGAACGATACGACAAAGGTCGAATCGAGAATTTG[Protospacer]GGGTACATGAGACGCAACTATGGTGACGAA -5'
+
+
+        (6) perform a feature pcr (only needed for crispr screening) using 
+            feature si primers 1, pn-2000098:
+
+            5'- AATGATACGGCGACCACCGAGATCTACACTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG-------------------->
+                                               5'- GCAGCGTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGCGCACCGACTCGGTGCCACTTTTTCAAGTTGATAACGGACTAGCCTTATTTAAACTTGCTATGCTGTTTCCAGCTTAGCTCTTAAAC[Protospacer]CCCATGTACTCTGCGTTGATACCACTGCTT -3'
+                                               3'- CGTCGCAGTCTACACATATTCTCTGTC[16-bp cell barcode][12-bp UMI]AACGATCCTGGCCGGAATTTCGCGTGGCTGAGCCACGGTGAAAAAGTTCAACTATTGCCTGATCGGAATAAATTTGAACGATACGACAAAGGTCGAATCGAGAATTTG[Protospacer]GGGTACATGAGACGCAACTATGGTGACGAA -5'
+                                                                                                                                                                                                                       <----------------------GAGACGCAACTATGGTGACGAATCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+
+            this is the product from the above feature pcr:
+
+            5'- AATGATACGGCGACCACCGAGATCTACACTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGCGCACCGACTCGGTGCCACTTTTTCAAGTTGATAACGGACTAGCCTTATTTAAACTTGCTATGCTGTTTCCAGCTTAGCTCTTAAAC[Protospacer]CCCATGTACTCTGCGTTGATACCACTGCTTAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+            3'- TTACTATGCCGCTGGTGGCTCTAGATGTGAGCAGCCGTCGCAGTCTACACATATTCTCTGTC[16-bp cell barcode][12-bp UMI]AACGATCCTGGCCGGAATTTCGCGTGGCTGAGCCACGGTGAAAAAGTTCAACTATTGCCTGATCGGAATAAATTTGAACGATACGACAAAGGTCGAATCGAGAATTTG[Protospacer]GGGTACATGAGACGCAACTATGGTGACGAATCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+
+
+        (7) add feature si primers 2 (pn-2000099) and chromium i7 sample index 
+            (pn-220103) for library pcr:
+
+            (i) cdna from antibody oligos:
+
+            5'- AATGATACGGCGACCACCGAGATCTACACTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG-------------------->
+                                               5'- GCAGCGTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGC[random 9-mer][15-bp antibody barcodes][random 9-mer]AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+                                               3'- CGTCGCAGTCTACACATATTCTCTGTC[16-bp cell barcode][12-bp UMI]AACGATCCTGGCCGGAATTTCG[random 9-mer][15-bp antibody barcodes][random 9-mer]TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+                                                                                                                                                                                   <-----------------TGTGCAGACTTGAGGTCAGTG[8-bp sample index]TAGAGCATACGGCAGAAGACGAAC -5'
+
+            (ii) cdna from sgrna:
+
+            5'- AATGATACGGCGACCACCGAGATCTACACTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG-------------------->
+            5'- AATGATACGGCGACCACCGAGATCTACACTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG[16-bp cell barcode][12-bp UMI]TTGCTAGGACCGGCCTTAAAGCGCACCGACTCGGTGCCACTTTTTCAAGTTGATAACGGACTAGCCTTATTTAAACTTGCTATGCTGTTTCCAGCTTAGCTCTTAAAC[Protospacer]CCCATGTACTCTGCGTTGATACCACTGCTTAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+            3'- TTACTATGCCGCTGGTGGCTCTAGATGTGAGCAGCCGTCGCAGTCTACACATATTCTCTGTC[16-bp cell barcode][12-bp UMI]AACGATCCTGGCCGGAATTTCGCGTGGCTGAGCCACGGTGAAAAAGTTCAACTATTGCCTGATCGGAATAAATTTGAACGATACGACAAAGGTCGAATCGAGAATTTG[Protospacer]GGGTACATGAGACGCAACTATGGTGACGAATCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+                                                                                                                                                                                                                                                               <-----------------TGTGCAGACTTGAGGTCAGTG[8-bp sample index]TAGAGCATACGGCAGAAGACGAAC -5'
+
+        
+        (8) final library structure:
+
+            (i) mrna library
+            
+                                                                                                                        .. <----| (read 3, 98 cycles, cdna)
+                                                (read 1, 28 cycles: bc + umi)  |------------------------------>                             (read 2, 8 cycles, index)  |------->
+            5'- AATGATACGGCGACCACCGAGATCTACAC - TCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - (dT)VXXX...XXX - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+            3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - (pA)BXXX...XXX - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                <======== illumina p5 ======>   <======= truseq r1 =========>   < 16 cell barc >   <= 12 umi =>   <==== cdna ==>   <======= truseq read 2 =====>  8bp sample index <====== illumina p7 ===>
+
+            (ii) surface protein library generated from antibody oligos, 
+                 if successful, this should be 211 bp long:
+
+                                                                                                                                the antibody barcodes will be located from base 10 to 
+                                                                                                                                base 24 (15-bp long), but the sequence length well 
+                                                                                                                                supersedes these bases. not sure whether the rest of 
+                                                                                                                                the bases are useful, but at least you can check 
+                                                                                                                                whether they are the bases you expected.
+                                                                                                                            .. <------------------------------------------------------| (read 3, 98 cycles, cdna)
+                                                    (read 1, 28 cycles: bc + umi)  |------------------------------>                                                                               (read 2, 8 cycles, index)  |------->
+            5'- AATGATACGGCGACCACCGAGATCTACAC - TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - TTGCTAGGACCGGCCTTAAAGC - NNNNNNNNN - NNNNNNNNNNNNNNN - NNNNNNNNN - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+            3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGCAGCCGTCGCAGTCTACACATATTCTCTGTC - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - AACGATCCTGGCCGGAATTTCG - NNNNNNNNN - NNNNNNNNNNNNNNN - NNNNNNNNN - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                          illumina p5                     nextera read 1              16 bp barcode      12 bp umi            capture         random 9-mer     antibody     random 9-mer          truseq read 2          8 bp sample index      illumina p7
+
+            (iii) crispr screening library generated from sgrna transcripts, 
+                  if successful, this should be ~314 bp:
+
+                                                                                                                                                                                            the first 30 bases will be the same, which is basically the tso sequence, then from 
+                                                                                                                                                                                            base 31 to base ~50 will be the identify of your sgrna, after that, the sequences are 
+                                                                                                                                                                                            the same again, which is the sgrna scaffold.
+                                                                                                                                                                                           <--------------------------------------------------------------------------------------| (read 3, 98 cycles, cdna)
+                                                    (read 1, 28 cycles: bc + umi)  |------------------------------>                                                                                      (read 2, 8 cycles, index)  |------->
+            5'- AATGATACGGCGACCACCGAGATCTACAC - TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - TTGCTAGGACCGGCCTTAAAGCGCACCGACTCGGTGCCACTTTTTCAAGTTGATAACGGACTAGCCTTATTTAAACTTGCTATGCTGTTTCCAGCTTAGCTCTTAAAC - NNN...NNN - CCC - ATGTACTCTGCGTTGATACCACTGCTT - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+            3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGCAGCCGTCGCAGTCTACACATATTCTCTGTC - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - AACGATCCTGGCCGGAATTTCGCGTGGCTGAGCCACGGTGAAAAAGTTCAACTATTGCCTGATCGGAATAAATTTGAACGATACGACAAAGGTCGAATCGAGAATTTG - NNN...NNN - GGG - TACATGAGACGCAACTATGGTGACGAA - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -3'
+                        illumina p5                      nextera read 1               16 bp barcode      12 bp umi            capture                                                   sgrna scaffold                              protospacer                   tso                           truseq read 2         8 bp sample index      illumina p7
+
+
+4   licensing
+=============
+
+    much of the contents are from teichlab/scg_lib_structs.
+    with copyright to Xi Chen <chenx9@sustech.edu.cn>
+    licensed under creative commons attribution 4.0 international.

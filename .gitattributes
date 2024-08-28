@@ -13,3 +13,11 @@ ucsc/9606/hsa-grch-38-bed.gz filter=lfs diff=lfs merge=lfs -text
 ucsc/10090/mmu-grch-39-bed.gz filter=lfs diff=lfs merge=lfs -text
 
 msigdb/2023.2/all.rds filter=lfs diff=lfs merge=lfs -text
+
+prtcls/ge/10x-chromium-3/v1-manual.txt.gz filter=lfs diff=lfs merge=lfs -text
+prtcls/ge/10x-chromium-3/v1-barcodes.txt.gz filter=lfs diff=lfs merge=lfs -text
+prtcls/ge/10x-chromium-3/v2-barcodes.txt.gz filter=lfs diff=lfs merge=lfs -text
+prtcls/ge/10x-chromium-3/v3-barcodes.txt.gz filter=lfs diff=lfs merge=lfs -text
+prtcls/ge/10x-chromium-3/v4-barcodes.txt.gz filter=lfs diff=lfs merge=lfs -text
+prtcls/ge/10x-chromium-3/v3-barcode-translation.txt.gz filter=lfs diff=lfs merge=lfs -text
+prtcls/ge/10x-chromium-3/v4-barcode-translation.txt.gz filter=lfs diff=lfs merge=lfs -text
