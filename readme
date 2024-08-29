@@ -29,7 +29,6 @@
     references to sources from other authors:
 
     (1) scrubletR: from <https://github.com/Moonerss/scrubletR>
-    (2) singleR: from 
-        <https://bioconductor.org/packages/release/bioc/html/SingleR.html>
-    (3) several small scripts from 
-        <https://github.com/tallulandrews/scRNASeqPipeline/tree/master>
+    (2) singleR: from <https://bioconductor.org/packages/release/bioc/html/SingleR.html>
+    (3) several small scripts from <https://github.com/tallulandrews/scRNASeqPipeline/tree/master>
+    (4) protocols from <https://github.com/teichlab/scg_lib_structs>
