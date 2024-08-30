@@ -13,4 +13,9 @@
 ============
 
     ./10x-chromium-3: 10x chromium single cell 3' gene expression kit.
+                      with feature barcoding
+
+    ./10x-chromium-5: 10x chromium single cell 5' gene expression kit.
+                      with feature barcoding (on membrane protein tags and 
+                      vdj immune profiling)
     
