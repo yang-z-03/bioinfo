@@ -3,4 +3,15 @@ prtcls:
 ======
 
     sequencing and bioinformatic protocols.
-    
+
+
+some general information on next-generation sequencing:
+======================================================
+
+    - illumina sequencing. <see ./illumina.txt>
+
+
+comparation between different scRNA protocols:
+=============================================
+
+    see <./comparation.tsv>

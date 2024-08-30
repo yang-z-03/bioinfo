@@ -1,0 +1,505 @@
+
+                            10x genomics 5' protocols
+                            =========================
+
+1   introduction
+================
+
+    the 5' gene expression kit is similar to the 3' scrna-seq methods in general. 
+    instead of using barcoded rt primers on the beads, the 5' gene expression 
+    kit use a universal rt primer for the reverse transcription, but with 
+    barcoded template switching oligos (tso) on their gel beads. the 5' gene 
+    expression kit is often coupled with profiling v(d)j from t/b cells (with 
+    tcr/bcr primers), but you can simply use this kit for gene expression 
+    purposes. conceptually, this kit is very similar to strt-seq.
+
+    like the 3' gene expression kit, there are multiple versions of the 10x 
+    chromium 5' gene expression kit based on slightly different chemistry. the 
+    library structure of v1 and v2 chemistries are exactly the same. oligo 
+    sequence information is taken from the 10x genomics technical note for vdj
+    profiling <./vdj-technical.pdf>. the 16-bp cell barcodes are the same as 
+    the 3' gene expression kit v2, and you can download from here: 
+    <./v1-v2-barcodes.txt.gz>.
+
+    around 2023-2024, the v3 chemistry was introduced. see their product sheet 
+    <./v3-products.pdf> for a more detailed overview. the cell barcodes have 
+    changed in the v3 chemistry, and the file with all 16-bp cell barcodes can 
+    be found here: <./v3-barcodes.txt.gz>. the library structure of 5' v3 is 
+    exactly the same as 5' v1 and v2, except that the umi is 10-bp long in v1 
+    and v2 but 12-bp in v3.
+
+
+2   adaptors
+============
+
+    beads-tso:
+
+        V1 (PN-220112) & V2 (PN-1000264): |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATrGrGrG -3'
+                         V3 (PN-2001129): |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][12-bp UMI]TTTCTTATATrGrGrG -3'
+
+    poly-dt rt primer (pn-2000007): 
+    
+        5'- AAGCAGTGGTATCAACGCAGAGTACTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTVN -3'
+
+    cdna primer mix (for cdna amplification, pn-220106):
+
+        forward primer: 5'- CTACACGACGCTCTTCCGATCT -3'
+        reverse primer: 5'- AAGCAGTGGTATCAACGCAG -3'
+
+    illumina truseq read 1 primer: 
+    
+        5'- ACACTCTTTCCCTACACGACGCTCTTCCGATCT -3'
+
+    illumina truseq read 2 primer: 
+    
+        5'- GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT -3'
+
+    truseq adapter (double stranded dna with a t overhang, pn-220026):
+
+            5'-  GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+            3'- TCTAGCCTTCTCG -5'
+
+    library pcr primer 1 (pn-220111): 
+        
+        5'- AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTC -3'
+
+    library pcr primer 2 (pn-220103): 
+    
+        5'- CAAGCAGAAGACGGCATACGAGAT[8-bp sample index]GTGACTGGAGTTCAGACGTGT -3'
+
+    sample index sequencing primer: 
+    
+        5'- GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+
+    illumina p5 adapter: 
+    
+        5'- AATGATACGGCGACCACCGAGATCTACAC -3'
+
+    illumina p7 adapter: 
+    
+        5'- CAAGCAGAAGACGGCATACGAGAT -3'
+
+
+3   library generation
+======================
+
+    (1) reverse transcription with poly-dt rt primer using mmlv:
+
+                       <--------NV(T)30CATGAGACGCAACTATGGTGACGAA -5'
+        5'- XXXXXXXXXXXXXXXXXXXXXB(A)30
+
+    (2) the terminal transferase activity of mmlv adds extra cs:
+
+         CCCXXXXXXXXXXXXXXXXXXXXXNV(T)30CATGAGACGCAACTATGGTGACGAA -5'
+        5'- XXXXXXXXXXXXXXXXXXXXXXB(A)30
+
+    (3) cdna capture by gel bead barcoded tso:
+
+                                                                  <-----------CCCXXXXXXXXXXXXXXXXXXXXXNV(T)30CATGAGACGCAACTATGGTGACGAA -5'
+        |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXXXXXXXXXXXXXXXXXXXXXB(A)30------->
+
+    (4) adding cdna primer mix to amplify full length cdna:
+
+           5'- CTACACGACGCTCTTCCGATCT-------->
+        |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXXXXXXXX...XXXXXXXXXB(pA)GTACTCTGCGTTGATACCACTGCTT -3'
+           3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXXXXXXXX...XXXXXXXXXV(dT)CATGAGACGCAACTATGGTGACGAA -5'
+                                                                                                       <--------GACGCAACTATGGTGACGAA -5'
+
+    (5) use fragmentase to fragment cdna and perform a-tailing:
+
+        product 1 (tso, cell barcode, umi plus 5'-end of cdna):
+
+        5'-   CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXXXXXXXX...XXXXXXXXX*A -3'
+        3'- A*GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXXXXXXXX...XXXXXXXXX   -5'
+
+        product 2 (middle of cdna):
+
+        5'-   XXXXXXXXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXXXXXX*A -3'
+        3'- A*XXXXXXXXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXXXXXX   -5'
+
+        product 3 (3' of cdna plus poly-dt rt sequence):
+
+        5'-   AAGCAGTGGTATCAACGCAGAGTAC(dT)VXXXXXXXXX...XXXXXXXXX*A -3'
+        3'- A*TTCGTCACCATAGTTGCGTCTCATG(pA)BXXXXXXXXX...XXXXXXXXX   -5'
+
+    (6) add double stranded illumina truseq adapter with a t overhang 
+        (pn-220026) for ligation:
+
+        product 1 (i assume the 5' end of poly-dt rt primer is blocked, so the 
+        adapter can only be ligated to the cdna end. this is the only 
+        ampliable fragment):
+
+        5'-   CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXX...XXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+        3'- A*GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXX...XXXTCTAGCCTTCTCG -5'
+
+        product 2 (will not amplify efficiently):
+
+        5'-                      GCTCTTCCGATCTXXXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+        3'- CACTGACCTCAAGTCTGCACACGAGAAGGCTAGAXXXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXTCTAGCCTTCTCG -5'
+
+        product 3 (not amplifiable due to the use of the specific primers for 
+        amplification, see the next step):
+
+        5'-   AAGCAGTGGTATCAACGCAGAGTAC(dT)VXXXXXXXXX...XXXXXXXXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+        3'- A*TTCGTCACCATAGTTGCGTCTCATG(pA)BXXXXXXXXX...XXXXXXXXXTCTAGCCTTCTCG -5'
+
+    (7) add library pcr primers 1 & 2 to amplify library:
+
+        5'-  AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTC--------->
+                                           5'-   CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXX...XXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+                                           3'- A*GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXX...XXXTCTAGCCTTCTCG                      -5'
+                                                                                                                             <-----------TGTGCAGACTTGAGGTCAGTG[8-bp sample index]TAGAGCATACGGCAGAAGACGAAC -5'
+
+    (8) final library structure:
+
+        v1 and v2 library:
+
+        5'- AATGATACGGCGACCACCGAGATCTACAC - TCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNNNNNNN - TTTCTTATATGGG - XXX ... XXX - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+        3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNNNNNNN - AAAGAATATACCC - XXX ... XXX - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                    illumina p5                      truseq read 1            16 bp barcode     10 bp umi                       cdna                  truseq read 2         8 bp sample id       illumina p7
+
+        v3 library:
+                                            add truseq read 1 primer to sequence the first read 
+                                            bottom strand as template, sequence 16-bp cell barcode and umi,                                         add sample index sequencing primer to 
+                                            26 cycles for v1 and v2, 28 cycles for v3:                                                              sequence the sample index                       
+
+                                 5'- ACAC - TCTTTCCCTACACGACGCTCTTCCGATCT -------------------------------->                              5'- GATCGGAAGAGCACACGTCTGAACTCCAGTCAC --------->
+        5'- AATGATACGGCGACCACCGAGATCTACAC - TCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - TTTCTTATATGGG - XXX ... XXX - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+        3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - AAAGAATATACCC - XXX ... XXX - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                    illumina p5                      truseq read 1            16 bp barcode     12 bp umi                         cdna                  truseq read 2         8 bp sample id       illumina p7
+
+                                                                                                                             <------------- TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+
+                                                                                                                              cluster regeneration, add truseq read 2 primer to 
+                                                                                                                              sequence the second read (top strand as template, 
+                                                                                                                              sequence cdna, 98 cycles):
+    
+
+4   immune profiling (vdj feature barcoding)
+============================================
+
+    as the technology keeps developing, there are quite a few different kits now 
+    on the 10x genomics website. i recommend you contact them to choose the 
+    appropriate kit for your application. the workflow is based on their reva 
+    version of the user guide. <see ./vdj-cell-surface-manual.pdf> this kit can 
+    profile gene expression (5'), vdj of bcr and tcr and surface protein. if you 
+    only need one of them, the basic principle is the same. all three layers of 
+    information is shown here to give an overview. the 5' kit is similar to the 
+    3' kit. instead of using barcoded rt primers on the beads, the 5' kit uses 
+    the same rt primer, but with barcoded template switching oligos (tso) on 
+    their gel beads. the antibody against surface proteins has a barcoded oligo 
+    that is reverse complement to the tso on the beads, which will also be 
+    captured inside the droplet. conceptually, this kit is very similar to 
+    strt-seq. the 16-bp cell barcodes are the same as above.
+
+    for the vdj part, the kit basically uses a combination of loci specific 
+    (vdj of b or t cells) primer mix to perform a nested pcr to get the 
+    information of vdj. the sequence of those loci specific primer mix can be 
+    found in the user guide <./vdj-cell-surface-manual.pdf>. if you blat/map 
+    them, you will see they anneal to the constant region of the genes. 
+    i'm not an expert on this, so i'm not able to comment on the details of 
+    these primers.
+
+
+5   immune profiling adaptors
+=============================
+
+    next gem single cell 5' gel beads:
+
+        V1 & V2 (PN-1000264 or PN-1000267): |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATrGrGrG -3'
+                           V3 (PN-2001129): |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][12-bp UMI]TTTCTTATATrGrGrG -3'
+
+    poly-dt rt primer (pn-2000007): 
+    
+        5'- AAGCAGTGGTATCAACGCAGAGTACTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTVN -3'
+
+    barcoded oligo (featurebarcode, fb) on antibody against surface protein: 
+     
+        5'- CGGAGATGTGTATAAGAGACAGNNNNNNNNNN[15-bp FB]NNNNNNNNNCCCATATAAGAAA -3'
+
+    feature cdna primers 4 (for cdna amplification, pn-2000277, 
+    these are a mixture of three primers):
+
+        Forward primer: 5'- CTACACGACGCTCTTCCGATCT -3'
+        Reverse primer (for cDNA): 5'- AAGCAGTGGTATCAACGCAGAG -3'
+        Reverse primer (for FB):  5'- CTCGTGGGCTCGGAGATGTG -3'
+
+    the foward primer of t/b mix 1 & 2 is the same: 
+    
+        5'- GATCTACACTCTTTCCCTACACGACGC -3'
+
+    for reverse primers of t/b cell mix 1 (pn-2000242, 2000254, 2000256, 
+    2000258): check the user guide for the sequence details. 
+    these are the outer primers. for reverse primers of t/b cell mix 2 
+    (pn-2000246, 2000255, 2000257, 2000259): check the user guide for the 
+    sequence details. these are the inner primers.
+
+    outer primers:
+
+        5'- TGAAGGCGTTTGCACATGCA -3'
+        5'- TCAGGCAGTATCTGGAGTCATTGAG -3'
+ 
+        5'- CAGGGCACAGTCACATCCT -3'
+        5'- TGCTGGACCACGCATTTGTA -3'
+        5'- GGTTTTGTTGTCGACCCAGTCT -3'
+        5'- TTGTCCACCTTGGTGTTGCT -3'
+        5'- CATGACGTCCTTGGAAGGCA -3'
+        5'- TGTGGGACTTCCACTG -3'
+        5'- TTCTCGTAGTCTGCTTTGCTCAG -3'
+ 
+        5'- CTGGTTGCTCCAGGCAATGG -3'
+        5'- TGTAGGCCTGAGGGTCCGT -3'
+ 
+        5'- TCAGCACGGGACAAACTCTTCT -3'
+        5'- GCAGGAGACAGACTCTTCTCCA -3'
+        5'- AACTGGCTGCTCATGGTGT -3'
+        5'- TGGTGCAAGTGTGGTTGAGGT -3'
+        5'- TGGTCACTTGGCTGGTGGTG -3'
+        5'- CACTTGGCAGGTGAACTGTTTTCT -3'
+        5'- AACCTTCAAGGATGCTCTTGGGA -3'
+        5'- GGACAGGGATCCAGAGTTCCA -3'
+        5'- AGGTGACGGTCTGACTTGGC -3'
+        5'- GCTGGACAGGGCTCCATAGTT -3'
+        5'- GGCACCTTGTCCAATCATGTTCC -3'
+        5'- ATGTCGTTCATACTCGTCCTTGGT -3'
+
+    inner primers:
+
+        5'- AGTCTCTCAGCTGGTACACG -3'
+        5'- TCTGATGGCTCAAACACAGC -3'
+
+        5'- GGGAAGTTTCTGGCGGTCA -3'
+        5'- GGTGGTACCCAGTTATCAAGCAT -3'
+        5'- GTGTCCCAGGTCACCATCAC -3'
+        5'- TCCTGAGGACTGTAGGACAGC -3'
+        5'- CACGCTGCTCGTATCCGA -3'
+        5'- TAGCTGCTGGCCGC -3'
+        5'- GCGTTATCCACCTTCCACTGT -3'
+
+        5'- AGTCAAAGTCGGTGAACAGGCA -3'
+        5'- GGCCAAGCACACGAGGGTA -3'
+
+        5'- TACACACCAGTGTGGCCTT -3'
+        5'- CAGGCCACTGTCACACCACT -3'
+        5'- CAGGTCACATTCATCGTGCCG -3'
+        5'- GAGGCCAGCACAGTGACCT -3'
+        5'- GCAGGGAAGTTCACAGTGCT -3'
+        5'- CTGTTTGAGATCAGTTTGCCATCCT -3'
+        5'- TGCGAGGTGGCTAGGTACTTG -3'
+        5'- CCCTTGACCAGGCATCC -3'
+        5'- AGGTCACGGAGGAACCAGTTG -3'
+        5'- GGCATCCCAGTGTCACCGA -3'
+        5'- AGAAGATCCACTTCACCTTGAAC -3'
+        5'- GAAGCACACGACTGAGGCAC -3'
+
+    truseq adapter (double stranded dna with a t overhang, pn-220026):
+
+        5'-  GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+        3'- TCTAGCCTTCTCG -5'
+
+    illumina truseq read 1 primer: 5'- ACACTCTTTCCCTACACGACGCTCTTCCGATCT -3'
+    illumina truseq read 2 primer: 5'- GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT -3'
+    illumina nextera read 2 primer: 5'- GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAG -3'
+
+    dual index kit tt set a (pn-3000431):
+
+        forward primer: 5'- AATGATACGGCGACCACCGAGATCTACAC[10-bp i5]ACACTCTTTCCCTACACGACGCTC -3'
+        reverse primer: 5'- CAAGCAGAAGACGGCATACGAGAT[10-bp i7]GTGACTGGAGTTCAGACGTGT -3'
+
+    dual index kit tn set a (pn-3000510):
+
+        forward primer: 5'- AATGATACGGCGACCACCGAGATCTACAC[10-bp i5]ACACTCTTTCCCTACACGACGCTC -3'
+        reverse primer: 5'- CAAGCAGAAGACGGCATACGAGAT[10-bp i7]GTCTCGTGGGCTCGG -3'
+
+    truseq sample index sequencing primer: 5'- GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+    nextera sample index sequencing primer: 5'- CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -3'
+    truseq i5 index sequencing primer (index2): 5'- AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT -3'
+    
+    illumina p5 adapter: 5'- AATGATACGGCGACCACCGAGATCTACAC -3'
+    illumina p7 adapter: 5'- CAAGCAGAAGACGGCATACGAGAT -3'
+
+
+6   library generations for vdj and cell surface immunoglobulins
+================================================================
+
+    (1) Reverse transcription with Poly-dT RT primer using MMLV:
+
+        1.1) mRNA:
+
+                           <--------NV(T)30CATGAGACGCAACTATGGTGACGAA -5'
+            5'- XXXXXXXXXXXXXXXXXXXXXB(A)30
+
+        1.2) Feature (un-affected):
+
+            3'- AAAGAATATACCCNNNNNNNNN[15-bp FB]NNNNNNNNNNGACAGAGAATATGTGTAGAGGC -5'
+
+    (2) The terminal tranferase acitivity of MMLV adds extra Cs:
+
+        2.1) mRNA:
+
+             CCCXXXXXXXXXXXXXXXXXXXXXNV(T)30CATGAGACGCAACTATGGTGACGAA -5'
+            5'- XXXXXXXXXXXXXXXXXXXXXXB(A)30
+
+        2.2) Feature (un-affected):
+
+            3'- AAAGAATATACCCNNNNNNNNN[15-bp FB]NNNNNNNNNNGACAGAGAATATGTGTAGAGGC -5'
+
+    (3) cDNA and Feature capture by gel bead barcoded TSO:
+
+        3.1) cDNA:
+
+                                                                      <-----------CCCXXXXXXXXXXXXXXXXXXXXXNV(T)30CATGAGACGCAACTATGGTGACGAA -5'
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXXXXXXXXXXXXXXXXXXXXXB(A)30------->
+
+        3.2) Feature:
+
+                                                            <-----------AAAGAATATACCCNNNNNNNNN[15-bp FB]NNNNNNNNNNGACAGAGAATATGTGTAGAGGC -5'
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGG------->
+
+    (4) There are two products after GEM-RT: the cDNA is long and 
+        the Feature is short:
+
+        4.1) cDNA (long):
+
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXXXXXXXXXXXXXXXXXXXXXB(pA)GTACTCTGCGTTGATACCACTGCTT -3'
+               3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXXXXXXXXXXXXXXXXXXXXNV(dT)CATGAGACGCAACTATGGTGACGAA -5'
+
+        4.2) Feature (short):
+
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGNNNNNNNNN[15-bp FB]NNNNNNNNNNCTGTCTCTTATACACATCTCCG -3'
+               3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCNNNNNNNNN[15-bp FB]NNNNNNNNNNGACAGAGAATATGTGTAGAGGC -5'
+
+    (5) Purify GEM-RT products and add Feature cDNA Primers 4 (PN-2000277) 
+        to amplify cDNA and Feature together:
+
+        5.1) cDNA (long):
+
+               5'- CTACACGACGCTCTTCCGATCT-------------->
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXXXXXXXXXXXXXXXXXXXXXB(pA)GTACTCTGCGTTGATACCACTGCTT -3'
+               3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXXXXXXXXXXXXXXXXXXXXNV(dT)CATGAGACGCAACTATGGTGACGAA -5'
+                                                                                             <-----------------GAGACGCAACTATGGTGACGAA -5'
+
+        5.2) Feature (short):
+
+               5'- CTACACGACGCTCTTCCGATCT-------------->
+            |--5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGNNNNNNNNN[15-bp FB]NNNNNNNNNNCTGTCTCTTATACACATCTCCG -3'
+               3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCNNNNNNNNN[15-bp FB]NNNNNNNNNNGACAGAGAATATGTGTAGAGGC -5'
+                                                                                                  <---------------GTGTAGAGGCTCGGGTGCTC-5'
+
+    (6) Use SPRI Select size selection to physically separate long (cDNA) and 
+        short (Feature) fragments for library preparation separately:
+
+        6.1) cDNA (long):
+
+            5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXXXXXXXXXXXXXXXXXXXXXB(pA)GTACTCTGCGTTGATACCACTGCTT -3'
+            3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXXXXXXXXXXXXXXXXXXXXNV(dT)CATGAGACGCAACTATGGTGACGAA -5'
+
+        6.2) Feature (short):
+
+            5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGNNNNNNNNN[15-bp FB]NNNNNNNNNNCTGTCTCTTATACACATCTCCGAGCCCACGAG -3'
+            3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCNNNNNNNNN[15-bp FB]NNNNNNNNNNGACAGAGAATATGTGTAGAGGCTCGGGTGCTC -5'
+
+    (7) Use Dual Index Kit TN Set A (PN-3000510) primers to make Feature library:
+
+        5'- AATGATACGGCGACCACCGAGATCTACAC[10-bp i5]ACACTCTTTCCCTACACGACGCTC----------------->
+                                                          5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGNNNNNNNNN[15-bp FB]NNNNNNNNNNCTGTCTCTTATACACATCTCCGAGCCCACGAG -3'
+                                                          3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCNNNNNNNNN[15-bp FB]NNNNNNNNNNGACAGAGAATATGTGTAGAGGCTCGGGTGCTC -5'
+                                                                                                                                                               <----------------GGCTCGGGTGCTCTG[10-bp i7]TAGAGCATACGGCAGAAGACGAAC -5'
+
+
+    (8) Purify Feature library which is ready to sequence:
+
+        5'- AATGATACGGCGACCACCGAGATCTACAC[10-bp i5]ACACTCTTTCCCTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGNNNNNNNNN[15-bp FB]NNNNNNNNNNCTGTCTCTTATACACATCTCCGAGCCCACGAGAC[10-bp i7]ATCTCGTATGCCGTCTTCTGCTTG -3'
+        3'- TTACTATGCCGCTGGTGGCTCTAGATGTG[10-bp i5]TGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCNNNNNNNNN[15-bp FB]NNNNNNNNNNGACAGAGAATATGTGTAGAGGCTCGGGTGCTCTG[10-bp i7]TAGAGCATACGGCAGAAGACGAAC -5'
+
+    (9) For cDNA part, if gene expression is of interest, check this page for details, and the gene expression library will be ommited here. For immune profiling of VDJ, add T/B Cell Mix 1 (Forward and outer primers) for the first round of amplification:
+
+        5'- GATCTACACTCTTTCCCTACACGACGC-------------->
+                        5'- CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXX...-V-D-J-[the constant regions]...XXX(pA)GTACTCTGCGTTGATACCACTGCTT -3'
+                        3'- GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXX...-V-D-J-[the constant regions]...XXX(dT)CATGAGACGCAACTATGGTGACGAA -5'
+                                                                                                          <-------[outer primers] -5'
+
+
+    (10) Purify the product and add T/B Cell Mix 2 (Forward and inner primers) for the second round of amplification:
+
+        5'- GATCTACACTCTTTCCCTACACGACGC-------------->
+        5'- GATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXX...-V-D-J-[the constant regions] -3'
+        3'- CTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXX...-V-D-J-[the constant regions] -5'
+                                                                                                   <-------[inner primers] -5'
+
+    (11) Purify the product after the second round of PCR:
+
+        5'- GATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXX...-V-D-J-[inner primers] -3'
+        3'- CTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXX...-V-D-J-[inner primers] -5'
+
+    (12) Fragment the product and A tailing:
+
+        Product 1 (left part):
+
+        5'- GATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXX...-V-D-J-...XXX*A -3'
+        3'- CTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXX...-V-D-J-...XXX   -5'
+
+        Product 2 (the rest):
+
+        5'-   XXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXX*A -3'
+        3'- A*XXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXX   -5'
+
+    (13) Truseq adapter (PN-220026) ligation:
+    
+        Product 1 (left part):
+
+        5'- GATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXX...-V-D-J-...XXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+        3'- CTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXX...-V-D-J-...XXXTCTAGCCTTCTCG -5'
+
+        Product 2 (the rest, not amplifiable, will be ommitted):
+
+        5'-                      GCTCTTCCGATCTXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+        3'- CACTGACCTCAAGTCTGCACACGAGAAGGCTAGAXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXTCTAGCCTTCTCG -5'
+
+    (14) Use Dual Index Kit TT Set A (PN-3000431) primers to make VDJ library:
+
+        5'- AATGATACGGCGACCACCGAGATCTACAC[10-bp i5]
+                                                   ACACTCTTTCCCTACACGACGCTC---------->
+                                          5'- GATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXX...-V-D-J-...XXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+                                          3'- CTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXX...-V-D-J-...XXXTCTAGCCTTCTCG -5'
+                                                                                                                                                 <--------------TGTGCAGACTTGAGGTCAGTG[10-bp i7]TAGAGCATACGGCAGAAGACGAAC -5'
+
+
+7   final barcoding library structures
+======================================
+
+    Gene expression library (click here to see how it is generated):
+
+    5'- AATGATACGGCGACCACCGAGATCTACAC - NNNNNNNNNN - ACACTCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNN..NNNNN - TTTCTTATATGGG - [XXX...XXX] - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - NNNNNNNNNN - TGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNN..NNNNN - AAAGAATATACCC - [XXX...XXX] - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                illumina p5            i5 index (10bp)          truseq 1                  barcode (16bp)    umi (10/12bp)                     cdna                   truseq 2               sample id (10bp)      illumina p7
+
+    Feature library (the 15-bp FeatureBarcode tells you the identify of the protein):
+
+    5'- AATGATACGGCGACCACCGAGATCTACAC - NNNNNNNNNN - ACACTCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNN..NNNNN - TTTCTTATATGGG - [NNNNNNNNN - NNNNNNNNNNNNNNN - NNNNNNNNNN] - CTGTCTCTTATACACATCTCCGAGCCCACGAGAC - NNNNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - NNNNNNNNNN - TGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNN..NNNNN - AAAGAATATACCC - [NNNNNNNNN - NNNNNNNNNNNNNNN - NNNNNNNNNN] - GACAGAGAATATGTGTAGAGGCTCGGGTGCTCTG - NNNNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                illumina p5            i5 index (10bp)          truseq 1                  barcode (16bp)    umi (10/12bp)                 9bp spacer  15bp feature code  9bp spacer              nextera 2                 sample id (10bp)     illumina p7                       
+
+    Immune Profiling VDJ library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACAC - NNNNNNNNNN - ACACTCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNN..NNNNN - TTTCTTATATGGG - [XXX...-V-D-J-...XXX] - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - NNNNNNNNNN - TGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNN..NNNNN - AAAGAATATACCC - [XXX...-V-D-J-...XXX] - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                illumina p5            i5 index (10bp)          truseq 1                  barcode (16bp)    umi (10/12bp)                       cdna-v-d-j                     truseq 2               sample id (10bp)      illumina p7
+            
+    * [...] is the only different regions.
+
+
+8   sequencing reads
+====================
+
+    (bottom strand template)
+    read 1: (read the barcode and umi)           5'- ACACTCTTTCCCTACACGACGCTCTTCCGATCT -------------------------------->
+    read 2: (read the sample index)                                                                                                                             5'- GATCGGAAGAGCACACGTCTGAACTCCAGTCAC ----------->
+    
+    5'- AATGATACGGCGACCACCGAGATCTACAC - NNNNNNNNNN - ACACTCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNN..NNNNN - TTTCTTATATGGG - [XXX...-V-D-J-...XXX] - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - NNNNNNNNNN - TGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNN..NNNNN - AAAGAATATACCC - [XXX...-V-D-J-...XXX] - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+                illumina p5            i5 index (10bp)          truseq 1                  barcode (16bp)    umi (10/12bp)                       cdna-v-d-j                     truseq 2               sample id (10bp)      illumina p7
+
+    read 3: (read i5 index)             <----------- TGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA -5'
+    read 4: (read the content)                                                                                                                       ... <-------- TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+    (top strand template)

@@ -1,0 +1,247 @@
+
+                        illumina sequencing libraries
+                        =============================
+
+the nature of illumina sequencing is still sequencing by synthesis (sbs). any 
+sbs method requires the presence of adaptors, which are short double-stranded 
+dna oligos whose sequences are known to us. the adaptors are designed by 
+scientists, and there are a few popular adaptor sequences that are used in the 
+ngs field. the following three (actually two main types to be honest) are the 
+most popular ones:
+
+truseq single index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT-insert-AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA-insert-TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+              Illumina P5                   Truseq Read 1                        Truseq Read 2                 i7        Illumina P7
+
+truseq dual index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACACNNNNNNNNACACTCTTTCCCTACACGACGCTCTTCCGATCT-insert-AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGNNNNNNNNTGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA-insert-TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+              Illumina P5               i5            Truseq Read 1                          Truseq Read 2                 i7        Illumina P7
+
+nextera dual index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACACNNNNNNNNTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG-insert-CTGTCTCTTATACACATCTCCGAGCCCACGAGACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGNNNNNNNNAGCAGCCGTCGCAGTCTACACATATTCTCTGTC-insert-GACAGAGAATATGTGTAGAGGCTCGGGTGCTCTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+               Illumina P5              i5             Nextera Read 1                                Nextera Read 2        i7         Illumina P7
+
+
+there are some other adaptors that can be used, but they either become obsolete 
+or not used usually. if you are interested, you can check the illumina adapter 
+sequences document for full details. basically, the nature of an illumina library 
+preparation is the process of adding those coloured adaptor seuqences to both 
+sides of the dna of your interest, which is the "-insert-" bit in the above 
+examples. all the commercial kits you buy for the library preparation do exactly 
+that, no matter where your buy them, no matter what you want to sequence. in 
+addition, you can also mix different types of adaptors due to the reaons mentioned 
+in the "library sequencing" section below. for example, you can use truseq read 
+1 at the left hand side, and nextera read 2 at the right hand side. or you can 
+use nextera read 1 at the left hand side and truseq read 2 at the right hand 
+side. it is toally fine but not recommended for beginners. the "n"s in the above 
+examples are the indices, or barcodes that discriminate different samples. the 
+index at the right hand side is often called "i7", or index1, which is the index 
+in the p7 primer; the index at the left hand side is called "i5", or index2, 
+which is the index in the p5 primer. this is because the index "i7" is sequenced 
+first before "i5" is sequenced. <check ./illumina-adaptors.pdf>
+
+now, the mission is: how to add those adaptors? well, this is where you can 
+become creative. in A PROFUSION OF CONFUSION IN NGS METHODS NAMING, 
+<https://www.nature.com/articles/nmeth.4558/> hadfield and retief mentioned over 
+300 ngs methods in their enseqlopedia wiki. in this github repository, many 
+single cell genomics methods are documented. all of them do and only do one 
+thing: add those adaptors to the sides of the dna they want to sequence. then, 
+what is the difference among all those methods? they differ from how they add 
+those adaptors. <see https://enseqlopedia.com/enseqlopedia/>
+
+another important detail is that we should know the only required seqeuences 
+are the following two:
+
+    Illumina P5 adaptor: 5'- AATGATACGGCGACCACCGAGATCTACAC -3'
+
+    Illumina P7 adaptor: 5'- CAAGCAGAAGACGGCATACGAGAT -3'
+
+if you use illumina sequencing, you have to use and make sure they are at the 
+sides of your dna fragments, like shown in the three examples above. the adaptor 
+sequences in the middle like truseq read 1, truseq read 2, nextera read 1 and 
+nextera read 2 can be changed. if you change them, you have to add your own 
+sequencing primers to the machine during sequencing. a few single cell genomic 
+methods listed in this github page used their own adaptors.
+
+
+p5 and p7 adaptors
+==================
+
+the amplification of the illumina sequencing is called cluster generation (and
+utilizing a patented technology called bridge pcr). here we present an overview
+of the process (which may be introduced in any books concerning sec-gen sequencing):
+
+the flow-cell is a glass media conctaining 8 channels. each chennel (lane) is a 
+tiny groove on the flow cell. dna primers are pre-incubated and linked to the 
+media: the p5' adaptor and the p7 adaptor. when given a target segment of dna
+to amplify:
+
+    [P5]-xxxxx-[P3]
+
+(anneal 1)
+
+               | [p7]
+               x
+               x
+        [p5'] || [p5]     | [p5']    | [p7]
+    -------------------------------------------------- lane
+
+(extension 1)
+
+        [p7'] || [p7]
+              yx
+              yx
+        [p5'] || [p5]     | [p5']    | [p7]
+    -------------------------------------------------- lane
+
+(denaturation 1)
+
+        [p7'] |
+              y
+              y
+        [p5'] |           | [p5']    | [p7]
+    -------------------------------------------------- lane
+
+(anneal 2)
+
+        [p7']  y
+              y y
+              y y
+        [p5'] | || [p7]   | [p5']    | [p7]   
+    -------------------------------------------------- lane
+
+during the chain reaction, both the p5'-linked complementary chain [p5']-y-[p3']
+and the template chain [p5]-x-[p3] got amplified.
+
+    temp [free] -> comp --> temp --> comp --> temp
+                     │        └-------------> comp
+                     ├-------------> temp --> comp
+                     └----------------------> temp
+
+the result is that every single template chain (free-floating in the solution)
+forms a cluster of nearly 1000k template-complementary cluster on the lane.
+the final step including cutting all the [p5'] chains and wash them out (removing
+the complementary chains) and leaving only the template duplications in the
+cluster. and blocks all 5' ends to avoid excessive extension.
+
+
+library sequencing
+==================
+
+once those adaptors are added propertly, we are ready to sequence them using 
+illumina machines. in the sequencing reagents provided by illumina, the 
+seuqencing primers are actually a mixture of different primers, including truseq, 
+nextera and even those primers from kits that are obsolete. therefore, you 
+actually can sequence different types of libraries together. for example, 
+truseq librareis and nextera libraries can be mixed together and sequenced 
+together without any problem. there are some slight differences among different 
+illumina machines, in terms of how they sequence read 1, read 2, index 1 and 
+index 2. check <./illumina-indexed-seq.pdf> for more details.
+
+
+(step 1) add read 1 sequencing primer mixture to sequence the first read 
+         (bottom strand as template):
+
+    truseq single index library:
+
+                             5'- ACACTCTTTCCCTACACGACGCTCTTCCGATCT---->
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA-insert-TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+    truseq dual index library:
+
+                                         5'- ACACTCTTTCCCTACACGACGCTCTTCCGATCT---->
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGNNNNNNNNTGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA-insert-TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+    nextera dual index library:
+
+                                         5'- TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG------>
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGNNNNNNNNAGCAGCCGTCGCAGTCTACACATATTCTCTGTC-insert-GACAGAGAATATGTGTAGAGGCTCGGGTGCTCTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+
+(step 2) add index 1 sequencing primer mixture to sequence the first index 
+         (index 1, i7, bottom strand as template):
+
+    truseq single index library:
+
+                                                                       5'- GATCGGAAGAGCACACGTCTGAACTCCAGTCAC------->
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA-insert-TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+    truseq dual index library:
+
+                                                                                   5'- GATCGGAAGAGCACACGTCTGAACTCCAGTCAC------->
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGNNNNNNNNTGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA-insert-TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+    nextera dual index library:
+
+                                                                                  5'- CTGTCTCTTATACACATCTCCGAGCCCACGAGAC------->
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGNNNNNNNNAGCAGCCGTCGCAGTCTACACATATTCTCTGTC-insert-GACAGAGAATATGTGTAGAGGCTCGGGTGCTCTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+
+(step 3 of miseq, hiseq2000/2500, miniseq (rapid) and novaseq 6000 v1.0) 
+         folds over and sequence the second index 
+         (index 2, i5, bottom strand as template):
+
+    truseq single index library (not really needed):
+    
+    5'- AATGATACGGCGACCACCGAGATCTACAC------->
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA-insert-TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+    truseq dual index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACAC------->
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGNNNNNNNNTGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA-insert-TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+    nextera dual index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACAC------->
+    3'- TTACTATGCCGCTGGTGGCTCTAGATGTGNNNNNNNNAGCAGCCGTCGCAGTCTACACATATTCTCTGTC-insert-GACAGAGAATATGTGTAGAGGCTCGGGTGCTCTGNNNNNNNNTAGAGCATACGGCAGAAGACGAAC -5'
+
+
+(step 3 of iseq 100, miniseq (standard), nextseq, hiseq x, hiseq 3000/4000 and 
+         novaseq 6000 v1.5) add index 2 sequencing primer mixture to sequence 
+         the second index (index 2, i5, top strand as template):
+    
+    truseq single index library:
+    
+    5'- AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT-insert-AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+                         <-------TGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA -5'
+
+    truseq dual index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACACNNNNNNNNACACTCTTTCCCTACACGACGCTCTTCCGATCT-insert-AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+                                     <-------TGTGAGAAAGGGATGTGCTGCGAGAAGGCTAGA -5'
+
+    nextera dual index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACACNNNNNNNNTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG-insert-CTGTCTCTTATACACATCTCCGAGCCCACGAGACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+                                     <-------AGCAGCCGTCGCAGTCTACACATATTCTCTGTC -5'
+
+
+(step 4) cluster regeneration, add read 2 sequencing primer mixture to sequence 
+         the second read (top strand as template):
+
+    truseq single index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT-insert-AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+                                                                   <------TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+
+    truseq dual index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACACNNNNNNNNACACTCTTTCCCTACACGACGCTCTTCCGATCT-insert-AGATCGGAAGAGCACACGTCTGAACTCCAGTCACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+                                                                               <------TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'
+
+    nextera dual index library:
+
+    5'- AATGATACGGCGACCACCGAGATCTACACNNNNNNNNTCGTCGGCAGCGTCAGATGTGTATAAGAGACAG-insert-CTGTCTCTTATACACATCTCCGAGCCCACGAGACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -3'
+                                                                               <------GACAGAGAATATGTGTAGAGGCTCGGGTGCTCTG -5'
+
+notes:
+
+- since there can both have read 1 and 2, they are all pair-ended sequencing.
+  reading the insert from two directions.

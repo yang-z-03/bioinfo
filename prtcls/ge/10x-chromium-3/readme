@@ -991,11 +991,3 @@
             5'- AATGATACGGCGACCACCGAGATCTACAC - TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - TTGCTAGGACCGGCCTTAAAGCGCACCGACTCGGTGCCACTTTTTCAAGTTGATAACGGACTAGCCTTATTTAAACTTGCTATGCTGTTTCCAGCTTAGCTCTTAAAC - NNN...NNN - CCC - ATGTACTCTGCGTTGATACCACTGCTT - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
             3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGCAGCCGTCGCAGTCTACACATATTCTCTGTC - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - AACGATCCTGGCCGGAATTTCGCGTGGCTGAGCCACGGTGAAAAAGTTCAACTATTGCCTGATCGGAATAAATTTGAACGATACGACAAAGGTCGAATCGAGAATTTG - NNN...NNN - GGG - TACATGAGACGCAACTATGGTGACGAA - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -3'
                         illumina p5                      nextera read 1               16 bp barcode      12 bp umi            capture                                                   sgrna scaffold                              protospacer                   tso                           truseq read 2         8 bp sample index      illumina p7
-
-
-4   licensing
-=============
-
-    much of the contents are from teichlab/scg_lib_structs.
-    with copyright to Xi Chen <chenx9@sustech.edu.cn>
-    licensed under creative commons attribution 4.0 international.
