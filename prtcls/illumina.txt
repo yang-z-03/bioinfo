@@ -245,3 +245,11 @@ notes:
 
 - since there can both have read 1 and 2, they are all pair-ended sequencing.
   reading the insert from two directions.
+
+- sequencing on illumina-based platforms typically gives you two reads R1 and R2,
+  as well as one or two indices. in the raw data (those given by a sequencing
+  machine, but not the downloadable sample-specific data) the indices are present,
+  and is used to assign which two strands are a pair, as well as assigning
+  dna sequences to samples. as this is finished (we can see on the web data
+  archive sequences that already belongs to a certain sample), the website only
+  gives you the true reads (R1 and R2) in fastq format.

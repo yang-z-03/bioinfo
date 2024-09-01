@@ -1,0 +1,75 @@
+
+                                using prefetch tool
+                                ===================
+                          (downloading from sra archives)
+
+the combination of prefetch + fasterq-dump is the fastest way to extract 
+fastq-files from sra-accessions. the prefetch tool downloads all necessary files 
+to your computer. the `prefetch` - tool can be invoked multiple times if the 
+download did not succeed. it will not start from the beginning every time; 
+instead, it will pick up from where the last invocation failed.
+
+after the download, you have the option to test the downloaded data with the 
+`vdb-validate` tool. after the successful download, there is no need for 
+network connectivity. you can move the folder created by prefetch to a different 
+location to perform the conversion to the fastq-format somewhere else (for 
+instance to a compute-cluster without internet access).
+
+there are a couple of points here:
+
+-   the prefetch-tool downloads to a directory named by accession. e.g. 
+    `prefetch srr000001` will create a directory named `srr000001` in the 
+    current directory. make sure that if you move the `srr000001` directory, 
+    you don't rename it as the conversion-tool will need to find the original 
+    directory.
+
+-   if you don't have internet access - run `vdb-config -i` and make sure that 
+    enable remote access is not checked.
+
+
+into what location will the prefetch save the downloaded files?
+==============================================================
+
+this will depend on the configuration of the toolkit. there are 3 options:
+
+-   in the current working directory
+-   in the user-repository
+-   user-defined location
+
+you can choose between options 1 and 2 with the vdb-config - tool:
+
+    $ vdb-config --prefetch-to-cwd
+    $ vdb-config --prefetch-to-user-repo
+    $ prefetch srr000001 -o /path/to/be/used 
+
+make sure the last directory of /path/to/be/used is the accession itself. 
+e.g. prefetch srr000001 -o /path/to/be/used/srr000001 the sra tools expect that 
+all files of the run srr000001 are stored in a directory having the same name as 
+the accession: srr000001. it is called "accession as directory".
+
+
+check the maximum-size limit
+============================
+
+the prefetch-tool has a default maximum download-size of 20g. if the requested 
+accession is bigger than 20g, you will need to increase that limit. you can 
+specify an extremely high limit no matter how large the requested accession is. 
+you can also query the accession-size using the `vdb-dump-tool` and the `--info`
+option. for instance, 
+
+    vdb-dump srr000001 --info 
+
+tells you how large this accession is (among other information). the accession 
+srr000001 has 932,308,473 bytes, which is below the default limit, so no further 
+action is necessary. the accession srr1951777 has 410,112,373,995 bytes. to 
+download this accession you have to lift the limit above that size:
+
+    $ prefetch srr1951777 --max-size 420000000000
+
+you can specify the limit in:
+
+    --max-size 10 == --max-size 10k : 10 kilobytes,
+    megabytes: --max-size 10m : 10 megabytes,
+    gigabytes: --max-size 10g : 10 gigabytes,
+    terabytes: --max-size 10t : 10 terabytes,
+    unlimited: --max-size u.

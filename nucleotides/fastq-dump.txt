@@ -1,0 +1,80 @@
+
+                          dumping fastq files from sra
+                          ============================
+
+before you perform the extraction, you should make a quick estimation about the 
+hard-drive space required. the final fastq-files will be approximately 7 times 
+the size of the accession. the fasterq-dump-tool needs temporary space 
+( scratch space ) of about 1.5 times the amount of the final fastq-files during 
+the conversion. overall, the space you need during the conversion is 
+approximately 17 times the size of the accession. you can check how much space 
+you have by running the `df -h .` command. under the 4th column ( avail ), you 
+see the amount of space you have available. please take into consideration that 
+there might be quotas set by your administrator which are not always visible. 
+if the limit is exceeded, the 'fasterq-dump'-tool will fail and a message will 
+be displayed.
+
+the simplest way to run fasterq-dump is:
+
+    $ fasterq-dump srr000001
+
+this assumes that you have previously 'prefetched' the accession into the 
+current working directory. if the directory srr000001 is not there, the tool 
+will try to access the accession over the network. this will be much slower and 
+might eventually fail due to network timeouts.
+
+notice that you use the accession as a command line argument. the tool will use 
+the current directory as scratch-space and will also put the output-files there. 
+when finished, the tool will delete all temporary files it created. you will now 
+have 3 files in your working directory:
+
+    srr000001.fastq    srr000001_1.fastq    srr000001_2.fastq
+
+if you want to have the output files created in a different directory, 
+use the --outdir option.
+
+the fasterq-dump-tool performs a split-3 operation by default. the 
+fasterq-dump-tool is not identical to the former fastq-dump-tool with regards to 
+command line options. the following is a comparison between fastq-dump and 
+fasterq-dump:
+
+split-3
+
+    $ fastq-dump srr000001 --split-3 --skip-technical
+    $ fasterq-dump srr000001
+
+split-spot
+
+    $ fastq-dump srr000001 --split-spot --skip-technical
+    $ fasterq-dump srr000001 --split-spot
+
+split-files
+
+    $ fastq-dump srr000001 --split-files --skip-technical
+    $ fasterq-dump srr000001 --split-files
+
+concatenated
+
+    $ fastq-dump srr000001
+    $ fasterq-dump srr000001 --concatenate-reads --include-technical
+
+important differences to fastq-dump include the following:
+
+-   the -z|--stdout option does not work for split-3 and split-files. the tool 
+    will fall back to producing files in these cases.
+
+-   there is no --gzip|--bizp2 option. you have to compress your files 
+    explicitly after they have been written.
+
+-   there is no -a option for the accession, only the ability to specify the
+    accession or a path directly. the tool will extract the output-name from 
+    the given accession or path.
+
+-   the fasterq-dump-tool does not take multiple accessions, just one.
+
+-   there is no -n|--minspotid and no -x|--maxspotid option. the tool always 
+    processes the entire accession.
+
+or else, we can just use the previous fastq dump:
+
+    fastq-dump --split-files --gzip srr000001

@@ -1,0 +1,70 @@
+
+                            data archive format
+                            ===================
+
+data archives store processed sequence data, which are commonly available to us
+to download and analyse. due to extremely varying protocols and sequencing
+routines (developed by different companies and machines etc), we may have to
+read the methods (how do they generate the cdna? how do they construct their
+library? and how do they sequence their library? etc.) section to determine
+which method is in use.
+
+however, sometimes the data given and the commands in the article is obfuscated.
+we may guess the format and protocol by the final result.
+
+note that the indices should not commonly present in the data archive, as the 
+data is already organized by samples, experiments, and runs. so most usually,
+only the read sequence is posted on the web. they may contain the following forms.
+
+
+1   bulk rna-seq (cdna sequencing)
+==================================
+
+    case 1:
+
+        only one read, mostly 90~100 nt long.
+
+        single-ended sequencing. these techniques commonly does not involve the
+        use of barcode and umi? (but better see the method details) can be
+        directly mapped to reference genome.
+
+    case 2: 
+
+        read 1, read 2. with similar length.
+
+        most likely to be pair-ended sequencing of balanced read. e.g. pe150.
+        can be directly mapped to reference genome.
+
+                          ----------------------> (read 1)
+        [p5]-[i5]-[read1]-[xxxxxxxxxxxxxxxxxxxxxx]-[read2]-[i7]-[p7]
+                              <------------------- (read 2)
+
+
+2   single cell rna-seq (with umi and cell barcode)
+===================================================
+
+    case 1: 
+
+        read 1, read 2. with similar length.
+
+        most likely to be pair-ended sequencing of balanced read. e.g. pe150.
+        you may remove the barcode and umi (if any) for read1, and map the rest
+        of the segments to the reference genome.
+
+                          ----------------------> (read 1)
+        [p5]-[i5]-[read1]-[barcode]-[umi]-[xxxxxxxxx]-[read2]-[i7]-[p7]
+                                           <--------- (read 2)
+    
+    case 2:
+
+        read 1, and read 2. the read 1 contains mostly 20~ nt.
+
+        most likely to be barcode + umi in read 1 (the shorter read) and the
+        reverse strand read in read 2.
+    
+    case 3:
+
+        read 1, read 2 and read 3. with 8-nt read 1, 28-nt read 2, and >90-nt
+        read 3. the 8-nt read should be index reads, this may not be uploaded
+        though, and the 28-nt read is typical for cell barcode and umi altogether,
+        the 90-nt read is the reversed read 2.

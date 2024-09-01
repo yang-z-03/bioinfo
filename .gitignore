@@ -23,6 +23,9 @@ geo/*
 
 nucleotides/*
 !nucleotides/readme
+!nucleotides/fastq-dump.txt
+!nucleotides/prefetch.txt
+!nucleotides/data-archives.txt
 
 tax/ncbi.sql
 
