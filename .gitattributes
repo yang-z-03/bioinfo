@@ -7,11 +7,6 @@ tax/ncbi-names.rds filter=lfs diff=lfs merge=lfs -text
 tax/ncbi-nodes.rds filter=lfs diff=lfs merge=lfs -text
 tax/ncbi-hierarchies.rds filter=lfs diff=lfs merge=lfs -text
 
-refseq/organisms.rds filter=lfs diff=lfs merge=lfs -text
-refseq/wanted.rds filter=lfs diff=lfs merge=lfs -text
-refseq/9606/genes-ext.rds filter=lfs diff=lfs merge=lfs -text
-refseq/9606/genes.rds filter=lfs diff=lfs merge=lfs -text
-
 ucsc/9606/hsa-grch-38-bed.gz filter=lfs diff=lfs merge=lfs -text
 ucsc/10090/mmu-grch-39-bed.gz filter=lfs diff=lfs merge=lfs -text
 
