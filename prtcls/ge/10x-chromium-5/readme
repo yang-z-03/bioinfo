@@ -146,8 +146,8 @@
     (7) add library pcr primers 1 & 2 to amplify library:
 
         5'-  AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTC--------->
-                                           5'-   CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGGXXX...XXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
-                                           3'- A*GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCCXXX...XXXTCTAGCCTTCTCG                      -5'
+                                           5'-   CTACACGACGCTCTTCCGATCT[16-bp cell barcode][10-bp UMI]TTTCTTATATGGG(dT)XXX...XXXAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -3'
+                                           3'- A*GATGTGCTGCGAGAAGGCTAGA[16-bp cell barcode][10-bp UMI]AAAGAATATACCC(pA)XXX...XXXTCTAGCCTTCTCG                      -5'
                                                                                                                              <-----------TGTGCAGACTTGAGGTCAGTG[8-bp sample index]TAGAGCATACGGCAGAAGACGAAC -5'
 
     (8) final library structure:
@@ -164,8 +164,8 @@
                                             26 cycles for v1 and v2, 28 cycles for v3:                                                              sequence the sample index                       
 
                                  5'- ACAC - TCTTTCCCTACACGACGCTCTTCCGATCT -------------------------------->                              5'- GATCGGAAGAGCACACGTCTGAACTCCAGTCAC --------->
-        5'- AATGATACGGCGACCACCGAGATCTACAC - TCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - TTTCTTATATGGG - XXX ... XXX - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
-        3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - AAAGAATATACCC - XXX ... XXX - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
+        5'- AATGATACGGCGACCACCGAGATCTACAC - TCTTTCCCTACACGACGCTCTTCCGATCT - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - TTTCTTATATGGG - (dT)XXX ... XXX - AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC - NNNNNNNN - ATCTCGTATGCCGTCTTCTGCTTG -3'
+        3'- TTACTATGCCGCTGGTGGCTCTAGATGTG - AGAAAGGGATGTGCTGCGAGAAGGCTAGA - NNNNNNNNNNNNNNNN - NNNNNNNNNNNN - AAAGAATATACCC - (pA)XXX ... XXX - TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG - NNNNNNNN - TAGAGCATACGGCAGAAGACGAAC -5'
                     illumina p5                      truseq read 1            16 bp barcode     12 bp umi                         cdna                  truseq read 2         8 bp sample id       illumina p7
 
                                                                                                                              <------------- TCTAGCCTTCTCGTGTGCAGACTTGAGGTCAGTG -5'

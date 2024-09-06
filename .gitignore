@@ -5,15 +5,26 @@
 .Rprofile
 bioinfo.Rproj
 
+# vscode related hidden files
+.vscode
+
 # databases
 ensembl/9606/*
 ensembl/10090/*
 !ensembl/readme
 !ensembl/9606/genes.rds
 
-refseq/9606/*
-!refseq/9606/genes.rds
-!refseq/9606/genes-ext.rds
+refseq/4896
+refseq/4932
+refseq/5858
+refseq/6239
+refseq/7227
+refseq/7955
+refseq/8355
+refseq/9606
+refseq/10090
+refseq/10116
+refseq/44689
 
 synapse/*
 !synapse/readme

@@ -1,0 +1,80 @@
+#!/usr/bin/python
+
+import argparse
+import os
+import pickle
+
+from ansi import error
+import delim
+import pandas as pd
+
+parser = argparse.ArgumentParser(
+    prog = 'annot: gffselect',
+    description = 'select subset columns and types from original gff.'
+)
+
+parser.add_argument('fname', type = str,
+                    help = 'input file, gff file (can be gzipped)')
+parser.add_argument('-z', default = False, action = 'store_true', dest = 'gzipped',
+                    help = 'explicitly specify whether the file is zipped archive')
+parser.add_argument('-t', dest = 'type', type = str, nargs = '*', default = [],
+                    help = 'selected annotation types')
+parser.add_argument('-c', dest = 'columns', type = str, nargs = '*', default = [],
+                    help = 'selected columns from this type, by default dumps all')
+
+params = parser.parse_args()
+search_sat_name = params.fname.rstrip('.gz') + '.sat'
+search_sac_name = params.fname.rstrip('.gz') + '.sac'
+search_hierarchy_name = params.fname.rstrip('.gz') + '.hierarchy'
+out_table = params.fname.rstrip('.gz') + '.table'
+
+if params.fname.endswith('gz'):
+    params.gzipped = True
+
+if not (os.path.exists(search_sat_name) and
+        os.path.exists(search_sac_name) and
+        os.path.exists(search_hierarchy_name)):
+    error('gff indices not complete. run gffindex first.')
+
+with open(search_sat_name, 'rb') as f:
+    sat = pickle.load(f)
+with open(search_sac_name, 'rb') as f:
+    sac = pickle.load(f)
+
+rsel = []
+csel = []
+
+for t in params.type:
+    if not t in sac.keys():
+        print('available types are: ' + ' '.join(sac.keys()))
+        error('specified type {0} not found.'.format(t))
+    
+    rsel += [t]
+    csel += list(sac[t].keys())
+
+csel = list(set(csel))
+csel.remove('.')
+
+if len(params.columns) > 0:
+    csel2 = []
+    for c in params.columns:
+        if not c in csel:
+            print('available metadata columns are: ' + ' '.join(csel))
+            error('invalid columns selected: ' + ' '.join(params.columns))
+        csel2 += [c]
+
+    csel = csel2
+
+csel = ['.seqid', '.source', '.type', '.start', '.end', '.score', '.strand', '.phase'] + csel
+
+# write to csv.
+table = {}
+for c in csel: table[c] = []
+for x in range(len(sat['.type'])):
+
+    if sat['.type'][x] in rsel:
+        for c in csel:
+            table[c] += [sat[c][x]]
+
+pdf = pd.DataFrame(table)
+pdf.to_csv(out_table, sep = '\t', index = False)

@@ -5,21 +5,22 @@ refseq:
     contains catalogs, genomes and their annotations downloaded from the ncbi
     reference sequence database.
 
-    contents:
+    the catalog of model organisms:
 
-    ../refseq
-    ├── 9606
-    │   ├── genes-ext.rds
-    │   └── genes.rds
-    ├── all-kindoms.txt
-    ├── archaea.txt
-    ├── fungi.txt
-    ├── invertebrate.txt
-    ├── organisms.rds
-    ├── plant.txt
-    ├── protozoa.txt
-    ├── vertebrate-others.txt
-    ├── vertibrate-mammalian.txt
-    ├── viral.txt
-    └── wanted.rds
-
+    ===================================================================
+        tax_id  name                       unique_name  name_class     
+     *   <int>  <chr>                      <chr>        <chr>          
+    -------------------------------------------------------------------
+     1    4896  Schizosaccharomyces pombe  NA           scientific name √
+     2    4932  Saccharomyces cerevisiae   NA           scientific name √
+     3    5858  Plasmodium malariae        NA           scientific name √
+     4    6239  Caenorhabditis elegans     NA           scientific name √
+     5    7227  Drosophila melanogaster    NA           scientific name √
+     6    7955  Danio rerio                NA           scientific name √
+     7    8355  Xenopus laevis             NA           scientific name
+     8    9606  Homo sapiens               NA           scientific name √
+     9    9913  Bos taurus                 NA           scientific name
+    10   10090  Mus musculus               NA           scientific name √
+    11   10116  Rattus norvegicus          NA           scientific name √
+    12   44689  Dictyostelium discoideum   NA           scientific name √
+    ===================================================================

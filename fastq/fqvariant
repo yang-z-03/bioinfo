@@ -10,8 +10,8 @@ import fq
 from ansi import error
 
 parser = argparse.ArgumentParser(
-    prog = 'demx: fqstat',
-    description = 'fastq statistics'
+    prog = 'fq: fqvariant',
+    description = 'calculate per-segment variation of fast-q sequences of a certain length'
 )
 
 parser.add_argument('fname', type = str,
