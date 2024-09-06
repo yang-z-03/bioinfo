@@ -27,9 +27,14 @@ suppressPackageStartupMessages({
   require(stringr)
   require(tibble)
   require(data.table)
+  require(ggplot2)
 
-  # require(SingleCellExperiment)
-  # require(Seurat)
+  require(SingleCellExperiment)
+  require(Seurat)
+  require(scater)
+  require(scuttle)
+
+  source("utils.R")
 })
 
 # global path resources
@@ -39,7 +44,6 @@ gp_singler <- "~/Documents/bioinfo/singler"
 gp_refseq <- "~/Documents/bioinfo/refseq"
 gp_annot <- "~/Documents/bioinfo/annot"
 gp_base <- "~/Documents/bioinfo/exprmat"
-wd <- "."
 
 # set up the common repl interface
 
@@ -89,10 +93,7 @@ while (TRUE) { # nolint
         "gffindex", "gffselect", "gffexonlen", "refer",
 
         # input source specification
-        "read", "read10x", "readgrp",
-
-        # experiment configuration
-        "grp",
+        "read", "read10x", "integrate", "group",
 
         # quality control
         "qc",

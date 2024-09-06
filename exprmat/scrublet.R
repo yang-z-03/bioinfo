@@ -1,4 +1,6 @@
 
+require(reticulate)
+
 scrublet <- function(
   seurat_obj,
   python_home               = Sys.which("python"),
@@ -20,9 +22,9 @@ scrublet <- function(
   }
 
   # source .py file
-  reticulate::source_python("scrublet/scrublet.py")
+  reticulate::source_python(paste(gp_base, "scrublet.py", sep = "/"))
 
-  ## prepare the data
+  # prepare the data
   x <- as(Matrix::t(seurat_obj @ assays $ RNA $ counts), "TsparseMatrix")
   i <- as.integer(x @ i)
   j <- as.integer(x @ j)
@@ -62,16 +64,16 @@ scrublet <- function(
 }
 
 scrublet_matrix <- function(
-    seurat_obj, matrix,
-    python_home               = Sys.which("python"),
-    return_results_only       = FALSE,
-    min_counts                = 2,
-    min_cells                 = 3,
-    expected_doublet_rate     = 0.06,
-    min_gene_variability_pctl = 85,
-    n_prin_comps              = 50,
-    sim_doublet_ratio         = 2,
-    n_neighbors               = NULL
+  seurat_obj, matrix,
+  python_home               = Sys.which("python"),
+  return_results_only       = FALSE,
+  min_counts                = 2,
+  min_cells                 = 3,
+  expected_doublet_rate     = 0.06,
+  min_gene_variability_pctl = 85,
+  n_prin_comps              = 50,
+  sim_doublet_ratio         = 2,
+  n_neighbors               = NULL
 ) {
 
   reticulate::use_python(python_home)
@@ -82,9 +84,9 @@ scrublet_matrix <- function(
   }
 
   # source .py file
-  reticulate::source_python("scrublet/scrublet.py")
+  reticulate::source_python(paste(gp_base, "scrublet.py", sep = "/"))
 
-  ## prepare the data
+  # prepare the data
   x <- as(Matrix::t(matrix), "TsparseMatrix")
   i <- as.integer(x @ i)
   j <- as.integer(x @ j)

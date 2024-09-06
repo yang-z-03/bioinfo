@@ -3,17 +3,17 @@ def scrublet_py(i, j, val, dim, expected_doublet_rate, min_counts,
 				min_cells, min_gene_variability_pctl, n_prin_comps,
 				sim_doublet_ratio, n_neighbors):
 	
-	print('<type> i : ', type(i))
-	print('<type> j : ', type(j))
-	print('<type> val : ', type(val))
-	print('<type> dim : ', type(dim))
-	print('<type> expected_doublet_rate : ', type(expected_doublet_rate))
-	print('<type> min_counts : ', type(min_counts))
-	print('<type> min_cells : ', type(min_cells))
-	print('<type> min_gene_variability_pctl : ', type(min_gene_variability_pctl))
-	print('<type> n_prin_comps : ', type(n_prin_comps))
-	print('<type> sim_doublet_ratio : ', type(sim_doublet_ratio))
-	print('<type> n_neighbors : ', type(n_neighbors))
+	# print('<type> i : ', type(i))
+	# print('<type> j : ', type(j))
+	# print('<type> val : ', type(val))
+	# print('<type> dim : ', type(dim))
+	# print('<type> expected_doublet_rate : ', type(expected_doublet_rate))
+	# print('<type> min_counts : ', type(min_counts))
+	# print('<type> min_cells : ', type(min_cells))
+	# print('<type> min_gene_variability_pctl : ', type(min_gene_variability_pctl))
+	# print('<type> n_prin_comps : ', type(n_prin_comps))
+	# print('<type> sim_doublet_ratio : ', type(sim_doublet_ratio))
+	# print('<type> n_neighbors : ', type(n_neighbors))
 
 	# import pickle
 
