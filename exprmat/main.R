@@ -28,6 +28,7 @@ suppressPackageStartupMessages({
   require(tibble)
   require(data.table)
   require(ggplot2)
+  require(extrafont)
 
   require(SingleCellExperiment)
   require(Seurat)
@@ -148,8 +149,7 @@ while (TRUE) { # nolint
 
   if (file.exists("norm/linear.rds") &&
         file.exists("norm/log.rds") &&
-        file.exists("norm/scaled.rds") &&
-        file.exists("norm/config.rds")) {
+        file.exists("norm/seurat.rds")) {
     shared[["is_norm"]] <- TRUE
   }
 }

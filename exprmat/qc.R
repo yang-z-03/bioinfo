@@ -81,30 +81,38 @@ if (!dir.exists("qc"))
 #     mitochondria, or which produce an abnormally high amount of truncated
 #     mitochondrial transcripts.
 
-expr_count <- shared[["counts"]]
-sample_meta <- shared[["meta_sample_raw"]]
-genes_meta <- shared[["meta_gene_raw"]]
+expr_count <- readRDS("features/matrix.rds")
+sample_meta <- readRDS("features/samples-meta.rds")
+genes_meta <- readRDS("features/genes-meta.rds")
+taxo <- readRDS("taxo.rds")
 
 sample_meta $ reads <- colSums(expr_count)
 
-mitos_ncbi <- c(
-  "COX1", "COX2", "COX3", "ND1", "ND2", "ND3", "ND4L", "ND4", "ND5", "ND6",
-  "CYTB", "ATP6", "ATP8"
-)
-
-mitos_entrez <- c(
-  "4512", "4513", "4514", "4535", "4536", "4537", "4539", "4538", "4540",
-  "4541", "4519", "4508", "4509"
-)
+mitos_ncbi <- taxo[["mt"]]
 
 mitos_id <- c()
-for (m in mitos_entrez) {
-  mitos_id <- c(mitos_id, grep(paste("^", m, "$", sep = ""),
-                               genes_meta $ entrez))
+for (m in mitos_ncbi) {
+  mitos_id <- c(mitos_id, grep(paste(m, "$", sep = ""),
+                               genes_meta $ name, ignore.case = TRUE))
 }
 
+# note that these entrez id of mitochondrial genes vary between species.
+# (and also does the names), it is required (maybe) to construct a mitochondrial
+# gene mapping in the genomes files given by ncbi refseq.
+#
+# mitos_entrez <- c(
+#   "4512", "4513", "4514", "4535", "4536", "4537", "4539", "4538", "4540",
+#   "4541", "4519", "4508", "4509"
+# )
+#
+# mitos_id <- c() # nolint
+# for (m in mitos_entrez) {
+#   mitos_id <- c(mitos_id, grep(paste("^", m, "$", sep = ""),
+#                                genes_meta $ entrez))
+# }
+
 expr_mt <- expr_count[mitos_id, ]
-expr_rb <- expr_count[grep("^RP[LS]", genes_meta $ name), ]
+expr_rb <- expr_count[grep("^RP[LS]", genes_meta $ name, ignore.case = TRUE), ]
 
 sample_meta $ pct_ribo <- colSums(expr_rb) / pull(sample_meta, "reads")
 sample_meta $ pct_mito <- colSums(expr_mt) / pull(sample_meta, "reads")
@@ -113,9 +121,12 @@ suppressPackageStartupMessages(
   source(paste(gp_base, "scrublet.R", sep = "/"))
 )
 
-d <- scrublet_matrix(NULL, make_matrix(expr_count), return_results_only = TRUE)
-sample_meta $ doublet_scores <- d[["doublet_scores"]]
-sample_meta $ is_doublet <- d[["predicted_doublets"]]
+if (pargs $ scrublet) {
+  d <- scrublet_matrix(NULL, make_matrix(expr_count),
+                       return_results_only = TRUE)
+  sample_meta $ doublet_scores <- d[["doublet_scores"]]
+  sample_meta $ is_doublet <- d[["predicted_doublets"]]
+}
 
 upper_mito <- pargs $ mtpct
 if (upper_mito < 0)
@@ -143,17 +154,16 @@ sample_meta $ qc <- (
 if (lower_ribo > 0)
   sample_meta $ qc <- sample_meta $ qc & (sample_meta $ pct_ribo >= lower_ribo)
 
-if (pargs $ scrublet)
+if (pargs $ scrublet) {
   sample_meta $ qc <- sample_meta $ qc & (!sample_meta $ is_doublet)
-
-cat(crlf)
+  cat(crlf)
+}
 
 cat(green("per-sample qc:"), crlf)
 print(table(sample_meta $ qc))
 cat(crlf)
 
-expr_count <- expr_count[, sample_meta $ qc]
-sample_meta <- sample_meta[sample_meta $ qc, ]
+sample_meta $ detection <- colSums(expr_count > 0)
 
 # filtering low-expression genes.
 
@@ -164,6 +174,87 @@ rowfilter <- expr_cells > expr_thresh
 cat(green("per-gene qc:"), crlf)
 print(table(expr_cells > expr_thresh))
 cat(crlf)
+
+if (pargs $ plot) suppressMessages({
+
+  if (lower_ribo < 0) lower_ribo <- 0
+
+  h1 <- ggplot2::ggplot(sample_meta, aes(x = pct_ribo)) +
+    ggplot2::geom_histogram() +
+    geom_vline(aes(xintercept = lower_ribo),
+               color = "#bd0000", linetype = "dashed", size = 0.5) +
+    ggplot2::labs(x = "Ribosomal percentage", y = "Cell counts") +
+    ggplot2::scale_x_continuous(expand = c(0.05, 0.05)) +
+    unify_theme_font(base_family = "Myriad Pro Cond")
+
+  h2 <- ggplot2::ggplot(sample_meta, aes(x = pct_mito)) +
+    ggplot2::geom_histogram() +
+    geom_vline(aes(xintercept = upper_mito),
+               color = "#bd0000", linetype = "dashed", size = 0.5) +
+    ggplot2::labs(x = "Mitochondrial percentage", y = "Cell counts") +
+    ggplot2::scale_x_continuous(expand = c(0.05, 0.05)) +
+    unify_theme_font(base_family = "Myriad Pro Cond")
+
+  h3 <- ggplot2::ggplot(sample_meta, aes(x = reads)) +
+    ggplot2::geom_histogram() +
+    geom_vline(aes(xintercept = upper_depth),
+               color = "#bd0000", linetype = "dashed", size = 0.5) +
+    geom_vline(aes(xintercept = lower_depth),
+               color = "#bd0000", linetype = "dashed", size = 0.5) +
+    ggplot2::labs(x = "Total reads (sequencing depth)", y = "Cell counts") +
+    ggplot2::scale_x_continuous(expand = c(0.05, 0.05)) +
+    unify_theme_font(base_family = "Myriad Pro Cond")
+
+  h4 <- ggplot2::ggplot(data.frame(.c = expr_cells), aes(x = .c)) +
+    ggplot2::geom_histogram() +
+    geom_vline(aes(xintercept = expr_thresh),
+               color = "#bd0000", linetype = "dashed", size = 0.5) +
+    ggplot2::labs(x = "Expressing cells", y = "Genes") +
+    ggplot2::scale_x_continuous(expand = c(0.05, 0.05)) +
+    unify_theme_font(base_family = "Myriad Pro Cond")
+
+  s1 <- ggplot2::ggplot(sample_meta, aes(x = reads, y = pct_mito)) +
+    ggplot2::geom_point(alpha = 0.5) +
+    geom_vline(aes(xintercept = lower_depth),
+               color = "#bd0000", linetype = "dashed", linewidth = 0.5) +
+    geom_vline(aes(xintercept = upper_depth),
+               color = "#bd0000", linetype = "dashed", linewidth = 0.5) +
+    geom_hline(aes(yintercept = upper_mito),
+               color = "#bd0000", linetype = "dashed", linewidth = 0.5) +
+    ggplot2::labs(x = "Total reads (sequencing depth)",
+                  y = "Mitochondrial percentage") +
+    ggplot2::scale_x_continuous(expand = c(0.05, 0.05)) +
+    unify_theme_font(base_family = "Myriad Pro Cond")
+
+  s2 <- ggplot2::ggplot(sample_meta, aes(x = reads, y = detection)) +
+    ggplot2::geom_point(alpha = 0.5) +
+    geom_vline(aes(xintercept = lower_depth),
+               color = "#bd0000", linetype = "dashed", linewidth = 0.5) +
+    geom_vline(aes(xintercept = upper_depth),
+               color = "#bd0000", linetype = "dashed", linewidth = 0.5) +
+    ggplot2::labs(x = "Total reads (sequencing depth)",
+                  y = "Gene detections") +
+    ggplot2::scale_x_continuous(expand = c(0.05, 0.05)) +
+    unify_theme_font(base_family = "Myriad Pro Cond")
+
+  ggsave("qc/pct-ribo.png", h1, units = "in",
+         width = 5, height = 2.5, dpi = 600)
+  ggsave("qc/pct-mito.png", h2, units = "in",
+         width = 5, height = 2.5, dpi = 600)
+  ggsave("qc/reads.png", h3, units = "in",
+         width = 5, height = 2.5, dpi = 600)
+  ggsave("qc/genes.png", h4, units = "in",
+         width = 5, height = 2.5, dpi = 600)
+
+  ggsave("qc/reads-vs-mito.png", s1, units = "in",
+         width = 5, height = 5, dpi = 600)
+  ggsave("qc/reads-vs-detections.png", s2, units = "in",
+         width = 5, height = 5, dpi = 600)
+
+})
+
+expr_count <- expr_count[, sample_meta $ qc]
+sample_meta <- sample_meta[sample_meta $ qc, ]
 
 expr_count <- expr_count[rowfilter, ]
 genes_meta <- genes_meta[rowfilter, ]
@@ -177,25 +268,3 @@ cat(green("successfully saved expression matrix."), crlf)
 shared[["counts"]] <- expr_count
 shared[["meta_sample_raw"]] <- sample_meta
 shared[["meta_gene_raw"]] <- genes_meta
-
-if (pargs $ plot) suppressMessages({
-
-  h1 <- ggplot2::ggplot(sample_meta, aes(x = pct_ribo)) +
-    ggplot2::geom_histogram()
-  h2 <- ggplot2::ggplot(sample_meta, aes(x = pct_mito)) +
-    ggplot2::geom_histogram()
-  h3 <- ggplot2::ggplot(sample_meta, aes(x = reads)) +
-    ggplot2::geom_histogram()
-  h4 <- ggplot2::ggplot(data.frame(.c = expr_cells), aes(x = .c)) +
-    ggplot2::geom_histogram()
-
-  ggsave("qc/pct-ribo.png", h1, units = "in",
-         width = 5, height = 2.5, dpi = 600)
-  ggsave("qc/pct-mito.png", h2, units = "in",
-         width = 5, height = 2.5, dpi = 600)
-  ggsave("qc/reads.png", h3, units = "in",
-         width = 5, height = 2.5, dpi = 600)
-  ggsave("qc/genes.png", h4, units = "in",
-         width = 5, height = 2.5, dpi = 600)
-
-})

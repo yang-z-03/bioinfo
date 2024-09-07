@@ -31,6 +31,24 @@ parser $ add_argument(
   dest = "rename", default = FALSE
 )
 
+parser $ add_argument(
+  "--mito", dest = "mtgenes", type = "character", nargs = "*",
+  default = c("COX1", "COX2", "COX3", "ND1", "ND2", "ND3", "ND4L", "ND4",
+              "ND5", "ND6", "CYTB", "ATP6", "ATP8"),
+  help = "specify the mitochondrial gene set for current taxo"
+)
+
+parser $ add_argument(
+  "--s-phase", dest = "sgenes", type = "character", nargs = "*", default = c(),
+  help = "specify the s phase markers for current taxo"
+)
+
+parser $ add_argument(
+  "--g2m-phase", dest = "g2mgenes", type = "character",
+  nargs = "*", default = c(),
+  help = "specify the g-to-m phase markers for current taxo"
+)
+
 if (length(vargs) == 0 ||
       (length(vargs) == 1 && (vargs[1] == "-h" || vargs[1] == "--help"))) {
   parser $ print_help()
@@ -60,10 +78,18 @@ if (pargs $ method == "search") {
   stop()
 }
 
+taxoinfo <- list()
+taxoinfo[["taxo"]] <- pargs $ taxo
+taxoinfo[["mt"]] <- pargs $ mtgenes
+taxoinfo[["s"]] <- pargs $ sgenes
+taxoinfo[["g2m"]] <- pargs $ g2mgenes
+saveRDS(taxoinfo, "taxo.rds")
+
 if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) && # nolint
       file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.exonlens", sep = "/"))) { # nolint
 
   if (file.exists("genome.rds")) file.remove("genome.rds")
+  if (file.exists("exonlens.tsv")) file.remove("exonlens.tsv")
   if (!file.exists(paste(gp_refseq, pargs $ taxo, "genome.rds", sep = "/"))) {
     genes <- read.delim(
       paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/"),
@@ -183,6 +209,12 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
   system(paste(
     "ln", "-s", paste(gp_refseq, pargs $ taxo, "genome.rds", sep = "/"),
     "genome.rds"
+  ))
+
+  system(paste(
+    "ln", "-s",
+    paste(gp_refseq, pargs $ taxo, "genomic.gff.exonlens", sep = "/"),
+    "exonlens.tsv"
   ))
 
 } else {

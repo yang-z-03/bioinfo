@@ -55,10 +55,10 @@ if (file.exists("sample.tsv")) {
     barcode <- read.delim("barcodes.tsv.gz", header = FALSE)
     grp <- data.frame(id = barcode) |> tibble()
   } else if (pargs $ novo == "table") {
-    barcode <- read.delim(pargs $ file, comment.char = "#")
+    barcode <- read.delim(pargs $ file, comment.char = "#")[, -1]
     grp <- data.frame(id = colnames(barcode)) |> tibble()
   } else if (pargs $ novo == "csv") {
-    barcode <- read.delim(pargs $ file, sep = ",", comment.char = "#")
+    barcode <- read.delim(pargs $ file, sep = ",", comment.char = "#")[, -1]
     grp <- data.frame(id = colnames(barcode)) |> tibble()
   } else {
     cat("the de-novo type:", pargs $ novo, "is not recognized.", crlf)
