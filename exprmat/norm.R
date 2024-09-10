@@ -231,15 +231,21 @@ sample_meta $ ccycle <- as.factor(srat @ meta.data $ Phase)
 
 # set these named metadata to the seurat object
 
-srat[["reads"]] <- pull(sample_meta, "reads")
-srat[["detection"]] <- pull(sample_meta, "detection")
-srat[["pct_ribo"]] <- pull(sample_meta, "pct_ribo")
-srat[["pct_mito"]] <- pull(sample_meta, "pct_mito")
-srat[["doublet_scores"]] <- pull(sample_meta, "doublet_scores")
+#. srat[["reads"]] <- pull(sample_meta, "reads")
+#. srat[["detection"]] <- pull(sample_meta, "detection")
+#. srat[["pct_ribo"]] <- pull(sample_meta, "pct_ribo")
+#. srat[["pct_mito"]] <- pull(sample_meta, "pct_mito")
+#. srat[["doublet_scores"]] <- pull(sample_meta, "doublet_scores")
+#.
+#. if (pargs $ cc) {
+#.   srat[["s_score"]] <- pull(sample_meta, "s_score")
+#.   srat[["g2m_score"]] <- pull(sample_meta, "g2m_score")
+#. }
 
-if (pargs $ cc) {
-  srat[["s_score"]] <- pull(sample_meta, "s_score")
-  srat[["g2m_score"]] <- pull(sample_meta, "g2m_score")
+# we should set all the metadata columns, for later use in integration.
+
+for (x in colnames(sample_meta)) {
+  srat[[x]] <- pull(sample_meta, x)
 }
 
 if (pargs $ method == "sct") {
@@ -274,13 +280,13 @@ if (pargs $ method == "seurat" || pargs $ method == "sct") {
     corr <- SeuratObject::LayerData(srat, layer = "counts") |> as.matrix()
     saveRDS(corr, "norm/linear.sct.rds")
 
-    # ord <- c()
-    # for (cx in rownames(srat)) {
-    #   id <- which(genes_meta $ name == cx)
-    #   ord <- c(ord, id[1])
-    # }
-    #
-    # genes_meta <- genes_meta[ord, ]
+    #. ord <- c()
+    #. for (cx in rownames(srat)) {
+    #.   id <- which(genes_meta $ name == cx)
+    #.   ord <- c(ord, id[1])
+    #. }
+    #.
+    #. genes_meta <- genes_meta[ord, ]
 
     # seurat sc-transform will often (nearly always) wipe out some gene from
     # the sct dataset. however, we decide not to save the scaled.data object

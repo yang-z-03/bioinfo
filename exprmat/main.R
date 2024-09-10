@@ -11,6 +11,7 @@ shared[["is_reference_assigned"]] <- FALSE
 shared[["is_loaded"]] <- FALSE
 shared[["is_qc"]] <- FALSE
 shared[["is_norm"]] <- FALSE
+shared[["is_integrate"]] <- FALSE
 
 # load the required libraries
 
@@ -32,6 +33,7 @@ suppressPackageStartupMessages({
 
   require(SingleCellExperiment)
   require(Seurat)
+  require(SeuratWrappers)
   require(scater)
   require(scuttle)
 
@@ -72,6 +74,8 @@ while (TRUE) { # nolint
   else if (command == "trace") traceback()
   else if (command == "q") q()
   else if (command == "wd") print(getwd())
+  else if (command == ":") cat("call system command with <:>", crlf)
+  else if (stringr::str_starts(command, ":")) system(str_sub(command, 2))
 
   # exprmat-defined function utilities.
 
@@ -102,8 +106,14 @@ while (TRUE) { # nolint
         # normalization
         "norm",
 
+        # advanced single-cell dataset manipulation
+        "dimreduc", "cluster", "transfer", "run",
+
         # programming language
-        "view", "clear"
+        "view", "clear", "table",
+
+        # manipulating seurat object
+        "chassay", "dim", "intgmeta", "cname"
 
       )) {
 
@@ -130,6 +140,11 @@ while (TRUE) { # nolint
   }
 
   # here, we will update the shared status after running every command.
+
+  if (file.exists("integrated.rds")) {
+    shared[["is_norm"]] <- TRUE
+    shared[["is_integrate"]] <- TRUE
+  }
 
   if (file.exists("genome.rds")) {
     shared[["is_reference_assigned"]] <- TRUE

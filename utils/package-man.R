@@ -67,23 +67,9 @@ install_local_source <- function(name, location) {
   }
 }
 
-packs_require <-
-  c("tidyverse", "limma", "affy", "oligo", "lumi",
-    "beadarray", "GEOquery", "simpleaffy", "gcrma", "readxl",
-    "impute", "genefilter", "pd.hugene.1.0.st.v1", "pd.hg.u133.plus.2",
-    "AnnotationDbi", "org.Hs.eg.db",
-    "hgug4112a.db", "AgiMicroRna", "sva", "DESeq2", "edgeR",
-    "lumiHumanIDMapping", "remotes", "pheatmap", "shiny", "aggregation",
-    "tidyverse/dplyr", "limma", "hwriter", "devtools", "ggplot2",
-    "Seurat", "RColorBrewer", "glmGamPoi", "scales", "SingleCellExperiment",
-    "scater", "scran", "patchwork", "reticulate", "data.tree", "RJSONIO")
-
 get_installed_package_list <- function() {
   info <- installed.packages()
   less <- info[, c("Package", "Version", "License", "Built")]
   rownames(less) <- c()
   return(less)
 }
-
-packs <- get_installed_package_list()
-# install_packages(packs_require)

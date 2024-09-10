@@ -1,22 +1,22 @@
 
-parser_view <- argparse::ArgumentParser(prog = "view")
+parser <- argparse::ArgumentParser(prog = "view")
 
-parser_view $ add_argument(type = "character", dest = "object",
-                           help = "variable object name to view")
+parser $ add_argument(type = "character", dest = "object",
+                      help = "variable object name to view")
 
-parser_view $ add_argument(
+parser $ add_argument(
   "-p", "--print", action = "store_const",
   help = "use print method to display object [default]",
   dest = "method", const = "print", default = "print"
 )
 
-parser_view $ add_argument(
+parser $ add_argument(
   "-v", "--view", action = "store_const",
   help = "use view method to display object",
   dest = "method", const = "view"
 )
 
-parser_view $ add_argument(
+parser $ add_argument(
   "-s", "--str", action = "store_const",
   help = "use str method to display object",
   dest = "method", const = "str"
@@ -24,10 +24,10 @@ parser_view $ add_argument(
 
 if (length(vargs) == 0 ||
       (length(vargs) == 1 && (vargs[1] == "-h" || vargs[1] == "--help"))) {
-  parser_view $ print_help()
+  parser $ print_help()
   stop()
 } else {
-  pargs <- parser_view $ parse_args(vargs)
+  pargs <- parser $ parse_args(vargs)
 }
 
 if (pargs $ method == "print") {
