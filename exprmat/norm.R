@@ -223,11 +223,12 @@ if (pargs $ cc) {
   srat <- Seurat::CellCycleScoring(
     srat, s.features = s_genes, g2m.features = g2m_genes, set.ident = FALSE
   )
+
+  sample_meta $ s_score <- srat @ meta.data $ S.Score
+  sample_meta $ g2m_score <- srat @ meta.data $ G2M.Score
+  sample_meta $ ccycle <- as.factor(srat @ meta.data $ Phase)
 }
 
-sample_meta $ s_score <- srat @ meta.data $ S.Score
-sample_meta $ g2m_score <- srat @ meta.data $ G2M.Score
-sample_meta $ ccycle <- as.factor(srat @ meta.data $ Phase)
 
 # set these named metadata to the seurat object
 
