@@ -28,6 +28,7 @@ suppressPackageStartupMessages({
   require(stringr)
   require(tibble)
   require(data.table)
+  require(purrr)
   require(ggplot2)
   require(extrafont)
 
@@ -107,7 +108,7 @@ while (TRUE) { # nolint
         "norm",
 
         # advanced single-cell dataset manipulation
-        "dimreduc", "cluster", "transfer", "run",
+        "dimreduc", "cluster", "transfer", "annot", "run",
 
         # programming language
         "view", "clear", "table",
