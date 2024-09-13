@@ -13,14 +13,6 @@ shared[["is_qc"]] <- FALSE
 shared[["is_norm"]] <- FALSE
 shared[["is_integrate"]] <- FALSE
 
-# load the required libraries
-
-.libPaths(c(
-  "/home/yang-z/R/bioinfo/4.4",
-  "/usr/lib64/R/library",
-  "/usr/share/R/library"
-))
-
 suppressPackageStartupMessages({
   require(crayon)
   require(argparse)
@@ -33,6 +25,7 @@ suppressPackageStartupMessages({
   require(extrafont)
 
   require(SingleCellExperiment)
+  require(SC3)
   require(Seurat)
   require(SeuratWrappers)
   require(scater)
@@ -43,11 +36,11 @@ suppressPackageStartupMessages({
 
 # global path resources
 
-gp_scrublet <- "~/Documents/bioinfo/scrublet"
-gp_singler <- "~/Documents/bioinfo/singler"
-gp_refseq <- "~/Documents/bioinfo/refseq"
-gp_annot <- "~/Documents/bioinfo/annot"
-gp_base <- "~/Documents/bioinfo/exprmat"
+gp_scrublet <- "~/bioinfo/scrublet"
+gp_singler <- "~/bioinfo/singler"
+gp_refseq <- "~/bioinfo/refseq"
+gp_annot <- "~/bioinfo/annot"
+gp_base <- "~/bioinfo/exprmat"
 
 # set up the common repl interface
 
@@ -108,13 +101,13 @@ while (TRUE) { # nolint
         "norm",
 
         # advanced single-cell dataset manipulation
-        "dimreduc", "cluster", "transfer", "annot", "run",
+        "dimreduc", "cluster", "transfer", "annot", "run", "de",
 
         # programming language
         "view", "clear", "table",
 
         # manipulating seurat object
-        "chassay", "dim", "intgmeta", "cname"
+        "chassay", "dim", "intgmeta", "cname", "w"
 
       )) {
 

@@ -37,3 +37,23 @@ if (pargs $ method == "print") {
 } else if (pargs $ method == "str") {
   str(shared[[pargs $ object]])
 }
+
+cat(crlf)
+objclass <- shared[[pargs $ object]] |> class()
+cat(red("class:"), objclass, crlf)
+
+switch(
+  objclass[1],
+  Seurat = {
+    cat(yellow("metadata columns:"), crlf)
+    print(shared[[pargs $ object]] @ meta.data |> colnames())
+    cat(yellow("gene names"), crlf)
+    print(shared[[pargs $ object]] |> rownames() |> head(20))
+    cat(yellow("sample names"), crlf)
+    print(shared[[pargs $ object]] |> colnames() |> head(20))
+  },
+  tbl_df = {
+    cat(yellow("full column names"), crlf)
+    print(shared[[pargs $ object]] |> colnames())
+  }
+)

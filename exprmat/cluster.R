@@ -15,8 +15,13 @@ parser $ add_argument(
 )
 
 parser $ add_argument(
-  "--expected", dest = "c", type = "integer", nargs = "+", default = 6:10,
+  "--expected", dest = "c", type = "integer", nargs = "+", default = 8,
   help = paste("the expected cluster number")
+)
+
+parser $ add_argument(
+  "--ncore", dest = "core", type = "integer", default = 100,
+  help = paste("cpu cores to run sc3")
 )
 
 parser $ add_argument(
@@ -50,9 +55,78 @@ switch(
       )
     )
 
-    rowData(sce) $ feature_symbol <- rownames(sce)
-    sce <- sc3(sce, ks = pargs $ c, biology = TRUE)
+    gene_meta <- shared[["meta_gene"]]
+    sample_meta <- shared[["meta_sample"]]
+    rowData(sce) $ feature_symbol <- gene_meta $ name
+
+    # one opened parallel worker consumes one connection. and R is hard-coded
+    # with a maximum of 128 connections.
+
+    sce <- sc3_estimate_k(sce)
+    k <- (metadata(sce) $ sc3) $ k_estimation
+
+    cat(blue("the estimation of k:"), k, crlf)
+    cat(blue("running sc3"), crlf)
+
+    # run sc3.
+    suppressMessages({
+      sce <- sc3(sce, ks = pargs $ c, biology = TRUE, n_cores = pargs $ core)
+    })
+
+    # plotting consensus matrix. the consensus matrix is a diagonal matrix with
+    # ncells * ncells in size. when the cell number is extremely high (e.g.
+    # greater than 5000), you should not attempt to plot this matrix. since the
+    # process will be extremely slow.
+
+    #. sc3_plot_consensus(sce, k)
+
+    plotk <- paste("sc3", pargs $ c[1], "clusters", sep = "_")
+    if (!dir.exists("sc3"))
+      dir.create("sc3")
+
+    # this object is also extremely large :(
+
+    #. cat(blue("plotting cluster stability ..."), crlf)
+    #. sc3stab <- sc3_plot_cluster_stability(sce, k = pargs $ c[1])
+    #. saveRDS(sc3stab, "sc3/cluster-stability.rds")
+
+    cat(blue("plotting cluster markers ..."), crlf)
+    sc3mark <- sc3_plot_markers(sce, k = pargs $ c[1], show_pdata = plotk)
+    saveRDS(sc3mark, "sc3/markers.rds")
+
+    cat(blue("plotting differential expressions ..."), crlf)
+    sc3de <- sc3_plot_de_genes(sce, k = pargs $ c[1], show_pdata = plotk)
+    saveRDS(sc3de, "sc3/de.rds")
+
+    # extract the biological information back to seurat.
+    # the sample-specific metadata can be directly stored in seurat
+
+    for (cold in sce |> colData() |> colnames()) {
+      shared[["seurat"]][[cold]] <- colData(sce)[[cold]]
+    }
+
+    for (cold in sce |> colData() |> colnames()) {
+      sample_meta[[cold]] <- colData(sce)[[cold]]
+    }
+
+    # the gene specific (e.g. marker genes, differential expressions etc.)
+    # will be stored in append to the genes-meta.rds
+
+    for (rowd in sce |> rowData() |> colnames()) {
+      if (rowd == "feature_symbol") {
+        next
+      } else {
+        gene_meta[[rowd]] <- rowData(sce)[[rowd]]
+      }
+    }
+
+    saveRDS(gene_meta, "norm/genes-meta.rds")
+    saveRDS(sample_meta, "norm/samples-meta.rds")
+    shared[["meta_gene"]] <- gene_meta
+    shared[["meta_sample"]] <- sample_meta
+    saveRDS(shared[["seurat"]], "norm/seurat.rds")
   },
+
   seurat = {
 
     # requires that you run PCA in dimreduc first.
@@ -68,6 +142,10 @@ switch(
     )
 
     # stores in the metadata column: seurat_clusters
-    seurat @ active.ident <- seurat $ seurat_clusters
+    shared[["seurat"]] @ active.ident <- shared[["seurat"]] $ seurat_clusters
+    shared[["meta_sample"]] $ seurat_clusters <-
+      shared[["seurat"]] $ seurat_clusters
+    saveRDS(shared[["seurat"]], "norm/seurat.rds")
+    saveRDS(shared[["meta_sample"]], "norm/samples-meta.rds")
   }
 )

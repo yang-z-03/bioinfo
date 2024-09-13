@@ -417,7 +417,10 @@ umapname <- paste("umap", pargs $ method, sep = ".")
 merged <- RunUMAP(merged, reduction = redname, dims = 1 : pargs $ dim,
                   reduction.name = umapname)
 
-saveRDS(merged, "integrated.rds")
+if (!dir.exists("norm"))
+  dir.create("norm")
+
+saveRDS(merged, "norm/seurat.rds")
 
 shared[["seurat"]] <- merged
 
@@ -477,5 +480,5 @@ for (cx in rownames(shared[["seurat"]])) {
 }
 
 meta <- merged_gene_info[ord, ]
-saveRDS(meta, "genes-meta.rds")
+saveRDS(meta, "norm/genes-meta.rds")
 shared[["meta_gene"]] <- meta
