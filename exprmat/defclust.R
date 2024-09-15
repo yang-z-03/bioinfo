@@ -17,9 +17,8 @@ if (length(vargs) == 0 ||
   pargs <- parser $ parse_args(vargs)
 }
 
-cls <- shared[["seurat"]][[pargs $ cluster]] |> class()
+cls <- shared[["seurat"]] @ meta.data |> pull(pargs $ cluster) |> class()
 
 if (cls[1] == "factor") {
-  shared[["seurat"]] @ active.ident <-
-    pull(shared[["seurat"]], pargs $ cluster)
+  Idents(shared[["seurat"]]) <- pargs $ cluster
 }

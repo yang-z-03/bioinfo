@@ -13,6 +13,12 @@ shared[["is_qc"]] <- FALSE
 shared[["is_norm"]] <- FALSE
 shared[["is_integrate"]] <- FALSE
 
+.libPaths(c(
+  "/home/yang-z/R/bioinfo/4.4",
+  "/usr/lib64/R/library",
+  "/usr/share/R/library"
+))
+
 suppressPackageStartupMessages({
   require(crayon)
   require(argparse)
@@ -102,7 +108,7 @@ while (TRUE) { # nolint
 
         # advanced single-cell dataset manipulation
         "dimreduc", "cluster", "annot", "run", "de", "lsclust", "rnclust",
-        "cpsclust", "defclust",
+        "cpsclust", "defclust", "addclust",
 
         # programming language
         "view", "clear", "table",

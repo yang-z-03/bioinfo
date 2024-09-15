@@ -26,9 +26,18 @@ if (length(vargs) == 0 ||
 # rename cluster columns, including those generated with sc3 and seurat.
 # this can be viewed with lsclust and defclust.
 
-cls <- shared[["seurat"]][[pargs $ cluster]] |> class()
+library(dplyr)
+
+cls <- shared[["seurat"]] @ meta.data |> pull(pargs $ cluster) |> class()
 
 if (cls[1] == "factor") {
-  labels(shared[["seurat"]][[pargs $ cluster]]) <- pargs $ names
-  labels(pull(shared[["meta_sample"]], pargs $ cluster)) <- pargs $ names
+  shared[["seurat"]] @ meta.data[[pargs $ cluster]] |>
+    levels() <- pargs $ names
+
+  shared[["meta_sample"]][[pargs $ cluster]] |>
+    levels() <- pargs $ names
+}
+
+if (cls[1] == "factor") {
+  Idents(shared[["seurat"]]) <- pargs $ cluster
 }

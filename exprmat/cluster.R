@@ -142,7 +142,7 @@ switch(
     )
 
     # stores in the metadata column: seurat_clusters
-    shared[["seurat"]] @ active.ident <- shared[["seurat"]] $ seurat_clusters
+    Idents(shared[["seurat"]]) <- "seurat_clusters"
     shared[["meta_sample"]] $ seurat_clusters <-
       shared[["seurat"]] $ seurat_clusters
     saveRDS(shared[["seurat"]], "norm/seurat.rds")

@@ -18,8 +18,3 @@ parser $ add_argument(
                "datasets are stored in ctref/* directory, where they are",
                "generated and format using 'ctref'")
 )
-
-parser $ add_argument(
-  "--pseudo-bulk", dest = "psbulk", action = "store_true", default = FALSE,
-  help = paste("make pseudo-bulk references")
-)
