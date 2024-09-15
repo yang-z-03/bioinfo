@@ -101,7 +101,8 @@ while (TRUE) { # nolint
         "norm",
 
         # advanced single-cell dataset manipulation
-        "dimreduc", "cluster", "transfer", "annot", "run", "de",
+        "dimreduc", "cluster", "annot", "run", "de", "lsclust", "rnclust",
+        "cpsclust", "defclust",
 
         # programming language
         "view", "clear", "table",
