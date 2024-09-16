@@ -84,7 +84,7 @@ if (!pargs $ cc && !is.null(pargs $ regress)) {
 }
 
 expr_count <- readRDS("qc/matrix.rds")
-expr_mat <- expr_count |> as.matrix()
+expr_mat <- expr_count |> as("sparseMatrix")
 sample_meta <- readRDS("qc/samples-meta.rds")
 genes_meta <- readRDS("qc/genes-meta.rds")
 exonlen <- read.delim("exonlens.tsv")
@@ -263,7 +263,7 @@ if (pargs $ method == "sct") {
 if (pargs $ method == "seurat" || pargs $ method == "sct") {
 
   DefaultAssay(srat) <- "RNA"
-  lognorm <- SeuratObject::LayerData(srat, layer = "data") |> as.matrix()
+  lognorm <- SeuratObject::LayerData(srat, layer = "data") |> as("sparseMatrix")
   saveRDS(lognorm, "norm/log.seurat.rds")
 
   if (pargs $ method == "seurat") {
@@ -276,9 +276,11 @@ if (pargs $ method == "seurat" || pargs $ method == "sct") {
   } else {
 
     DefaultAssay(srat) <- "SCT"
-    lognorm <- SeuratObject::LayerData(srat, layer = "data") |> as.matrix()
+    lognorm <- SeuratObject::LayerData(srat, layer = "data") |>
+      as("sparseMatrix")
     saveRDS(lognorm, "norm/log.sct.rds")
-    corr <- SeuratObject::LayerData(srat, layer = "counts") |> as.matrix()
+    corr <- SeuratObject::LayerData(srat, layer = "counts") |>
+      as("sparseMatrix")
     saveRDS(corr, "norm/linear.sct.rds")
 
     #. ord <- c()
@@ -298,7 +300,7 @@ if (pargs $ method == "seurat" || pargs $ method == "sct") {
   }
 
 } else {
-  lognorm <- SeuratObject::LayerData(srat, layer = "data") |> as.matrix()
+  lognorm <- SeuratObject::LayerData(srat, layer = "data") |> as("sparseMatrix")
   saveRDS(lognorm, paste("norm/log", pargs $ method, "rds", sep = "."))
   system(paste(
     "ln", "-s",

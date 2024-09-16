@@ -50,8 +50,8 @@ switch(
   sc3 = {
     sce <- SingleCellExperiment(
       assays = list(
-        counts = as.matrix(GetAssayData(shared[["seurat"]], layer = "counts")),
-        logcounts = as.matrix(GetAssayData(shared[["seurat"]], layer = "data"))
+        counts = GetAssayData(shared[["seurat"]], layer = "counts") |> as("sparseMatrix"),
+        logcounts = GetAssayData(shared[["seurat"]], layer = "data") |> as("sparseMatrix")
       )
     )
 
