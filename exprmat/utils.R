@@ -35,3 +35,19 @@ unify_theme_font <- function(base_size = 13, base_family = "Myriad Pro Cond") {
     axis.ticks.length = ggplot2::unit(-0.05, "in") # ticks inwards
   )
 }
+
+decollapse <- function(data, col, sep = ";") {
+  colkey <- data |> dplyr::pull(col)
+  indexlist <- strsplit(colkey, sep)
+
+  index <- c()
+  for (i in seq_along(indexlist)) {
+    index <- c(index, rep(i, length(indexlist[[i]])))
+  }
+
+  l <- data |> dplyr::select(-c(col))
+  l <- l[index]
+  l[[col]] <- unlist(indexlist)
+
+  return(l)
+}

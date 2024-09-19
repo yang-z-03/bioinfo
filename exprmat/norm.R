@@ -90,7 +90,7 @@ genes_meta <- readRDS("qc/genes-meta.rds")
 exonlen <- read.delim("exonlens.tsv")
 genes_meta <- merge(
   x = genes_meta, y = exonlen[, c("symbol", "mean", "median", "merged")],
-  by.x = "name", by.y = "symbol",
+  by.x = "name", by.y = "gene",
   all.x = TRUE, all.y = FALSE
 )
 
@@ -165,11 +165,12 @@ if (pargs $ method != "sct") {
 
 # entering seurat.
 
-dedup <- duplicated(pull(genes_meta, "name")) | pull(genes_meta, "name") == ""
+dedup <- duplicated(pull(genes_meta, "seurat_names")) |
+  pull(genes_meta, "seurat_names") == ""
 expr_mat <- expr_mat[!dedup, ]
 genes_meta <- genes_meta[!dedup, ]
 
-rownames(expr_mat) <- pull(genes_meta, "name")
+rownames(expr_mat) <- pull(genes_meta, "seurat_names")
 srat <- Seurat::CreateSeuratObject(
   counts = Matrix::Matrix(expr_mat)
 )

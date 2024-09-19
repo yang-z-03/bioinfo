@@ -54,6 +54,10 @@ switch(
   },
   tbl_df = {
     cat(yellow("full column names"), crlf)
-    print(shared[[pargs $ object]] |> colnames())
+    if (shared[[pargs $ object]] |> colnames() |> length() <= 200) {
+      print(shared[[pargs $ object]] |> colnames())
+    } else {
+      cat(yellow("  more than 200 columns, omitted."), crlf)
+    }
   }
 )

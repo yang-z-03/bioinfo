@@ -41,6 +41,8 @@ nucleotides/*
 
 tax/ncbi.sql
 
+analyses
+
 # msigdb/
 # !msigdb/readme
 

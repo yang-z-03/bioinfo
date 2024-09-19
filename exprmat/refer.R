@@ -108,61 +108,21 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
                    genes[selected_id_lines, "Dbxref"],
                    perl = TRUE, ignore.case = TRUE)
 
-    #. duplicated(ncbi_id) |> sum()
-    #. dup_entrez <- duplicated(ncbi_id) # 5454
-
-    # lets check if there are duplicates ...
-    # there are 5454 duplicates in the human genome.
-    # there are genes that share the same entrez id but with different locations
-
-    #. duplicated(genes $ ID) |> sum()
-    #. dup_id <- duplicated(genes $ ID) # 3
-    # the genes ID field only contains 3 duplicates in the genome.
-    #. duplicated(genes $ gene) |> sum()
-    #. dup_name <- duplicated(genes $ gene) # 5471
-    #. duplicated(genes $ Name) |> sum() # 5471
-    #. genes $ Name != genes $ gene |> sum() # 0
-    # while the gene name field contains 5471 duplicates.
-
-    #. dup_id | dup_name |> sum() # 5471
-    #. dup_id & dup_name |> sum() # 3
-    # the 3 genes with duplicated ids are all in dup_name.
-
-    #. dup_entrez | dup_name |> sum() # 5471
-    #. dup_entrez & dup_name |> sum() # 5454
-    # the 5471 genes with duplicated entrez code is all in dup_name.
-
-    #. dup_entrez | dup_id |> sum() # 5457
-    #. dup_entrez & dup_id |> sum() # 0
-
-    # so, the venn graph will be:
+    # here, there may be some notice points for the ENTREZ annotations:
     #
-    #     dup entrez [5454]         dup ids [3]
-    #  <==============>      14      <======>
-    #  <====================================>
-    #                dup names[5471]
+    # (1) 4 genes have misteriously no symbols and id names. however with a
+    #     .type == gene specification. maybe some mistakes.
     #
-
-    #. genes[dup_id, ] |> View()
-
-    # lets show which of the 3 item of duplicated ids is ...
-    # they have duplicated ids simply because their ID field is missing!
-
-    #. genes[dup_entrez, ] |> View()
-    #. genes[dup_entrez, ] $ ID |> is.na() |> sum()
-    #. genes[dup_entrez, ] $ gene |> duplicated() |> sum()
-    # these 5454 items are simple non-NA duplications.
-
-    #. rest_of_them <- (dup_name & !(dup_entrez | dup_id))
-    #. ncbi_id[rest_of_them] |> duplicated()
-    #. genes[rest_of_them, ] |> View() # 14
-    # having the same symbol, but with different id and entrez.
-    # these are all 14 tRNA transcripts.
+    # (2) refseq column 'gene' and 'name' are completely identical, both as
+    #     the standard hugo gene names.
 
     genes <- genes[selected_id_lines, ]
     gene_table <- cbind(genes, ncbi_id) # 48106 genes
+    cat(blue(nrow(gene_table)), blue("genes in the annotation."), crlf)
+
     # remove those with empty symbol names and IDs (just 4, throw away)
-    gene_table <- gene_table[- which(genes $ ID == ""), ] # 48102 genes
+    gene_table <- gene_table[!(genes $ ID == ""), ] # 48102 genes
+    cat(blue(nrow(gene_table)), blue("genes with non-empty names."), crlf)
 
     # by now, the only non-duplicated column is ID.
 
@@ -234,6 +194,10 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
 
     chrfilter <- stringr::str_starts(gene_table $ .seqid, "NC")
     gene_table <- gene_table[chrfilter, ]
+    cat(blue(nrow(gene_table)), blue("genes in primary chromosome assembly"), crlf)
+
+    gene_table <- gene_table[!duplicated(gene_table $ ncbi_id), ]
+    cat(blue(nrow(gene_table)), blue("genes with non-duplicated entrez id"), crlf)
 
     # and here is the mitochondrial genome for human:
 
@@ -276,7 +240,16 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
     # 35 4519    NC_012920.1  14747 15887 +       CYTB  protein_coding
     # 36 4576    NC_012920.1  15888 15953 +       TRNT  tRNA
     # 37 4571    NC_012920.1  15956 16023 -       TRNP  tRNA
-    
+
+    mtids <- stringr::str_starts(gene_table $ .seqid, pargs $ mt)
+    is_mito <- rep(FALSE, length(gene_table $ .seqid))
+    is_mito[mtids] <- TRUE
+    gene_table $ mito <- is_mito
+
+    # convert to seurat-compatible gene names (_ is not allowed)
+    gene_table $ seurat_names <-
+      stringr::str_replace_all(gene_table $ gene, "_", "-")
+
     suppressPackageStartupMessages(
       {
         require(AnnotationHub)
@@ -284,6 +257,7 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
         sql <- hub[[pargs $ annot]]
       }
     )
+
     go_columns <- columns(sql)
     go_columns <- go_columns[!(go_columns == "ENTREZID")]
 
@@ -292,7 +266,7 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
     all_genes <- data.frame(all_genes) |> t()
 
     batch <- 5000
-    entrez <- ncbi_id
+    entrez <- gene_table $ ncbi_id
 
     for (x in seq(1, length(entrez), batch)) {
       start <- x
@@ -306,9 +280,11 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
       cat("extracting gene info from database orgdb: ", c(start, end), crlf)
 
       for (col in go_columns) {
-        suppressMessages(
-          query_list <- select(sql, batch_list, col, verbose = FALSE)
-        )
+        suppressWarnings(suppressMessages(
+          query_list <- AnnotationDbi::select(
+            sql, batch_list, col, verbose = FALSE
+          )
+        ))
         cols_data <- list()
         for (i in seq_along(batch_list)) {
           certain_col <- query_list[query_list $ ENTREZID == batch_list[i], col]
@@ -322,10 +298,10 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
       all_genes <- rbind(all_genes, batch_genes)
     }
 
-    all_genes <- all_genes[-1, ]
     row_name <- rownames(all_genes)
     all_genes <- all_genes |> as.data.table() |> tibble()
-    all_genes $ ncbi_id <- row_name
+    all_genes <- all_genes[-1, ]
+    all_genes $ ncbi_id <- row_name[-1]
 
     gene_table <- gene_table |> as.data.table() |> tibble()
 

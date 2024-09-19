@@ -88,30 +88,7 @@ taxo <- readRDS("taxo.rds")
 
 sample_meta $ reads <- colSums(expr_count)
 
-mitos_ncbi <- taxo[["mt"]]
-
-mitos_id <- c()
-for (m in mitos_ncbi) {
-  mitos_id <- c(mitos_id, grep(paste(m, "$", sep = ""),
-                               genes_meta $ name, ignore.case = TRUE))
-}
-
-# note that these entrez id of mitochondrial genes vary between species.
-# (and also does the names), it is required (maybe) to construct a mitochondrial
-# gene mapping in the genomes files given by ncbi refseq.
-#
-# mitos_entrez <- c(
-#   "4512", "4513", "4514", "4535", "4536", "4537", "4539", "4538", "4540",
-#   "4541", "4519", "4508", "4509"
-# )
-#
-# mitos_id <- c() # nolint
-# for (m in mitos_entrez) {
-#   mitos_id <- c(mitos_id, grep(paste("^", m, "$", sep = ""),
-#                                genes_meta $ entrez))
-# }
-
-expr_mt <- expr_count[mitos_id, ]
+expr_mt <- expr_count[genes_meta $ mito, ]
 expr_rb <- expr_count[grep("^RP[LS]", genes_meta $ name, ignore.case = TRUE), ]
 
 sample_meta $ pct_ribo <- colSums(expr_rb) / pull(sample_meta, "reads")

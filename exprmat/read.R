@@ -78,7 +78,7 @@ cat(
     "assigning your gene to the database? possible selections:"
   )),
   "\n    (a) 'entrez': ncbi entrez gene id, integers",
-  "\n    (b) 'refseq' or 'capitalize': the refseq name, full capitalized",
+  "\n    (b) 'hgnc': the refseq name, full capitalized",
   "\n    (c) 'ensembl': the ensembl gene id, starting with ENSG or ENSMUSG",
   crlf, crlf
 )
@@ -99,41 +99,70 @@ if (!(gene_map_pivot %in% gene_meta_cols)) {
   q(save = "no", status = 1)
 }
 
+pivot_name <- gene_map_pivot
 gene_map_pivot <- pull(expr_count, gene_map_pivot)
+
+if (is.na(gene_map_pivot) |> sum() > 0)
+  cat(crlf, yellow("the pivot column contains NAs!"), crlf,
+      "   contains", red(is.na(gene_map_pivot) |> sum()), "NAs", crlf)
+
 genes <- readRDS("genome.rds")
 gene_names <- genes $ name
+
 genes_notfound <- c()
-genes_missing <- c()
-genes_map <- c() # mapping order to genes
 genes_duplicate <- c()
-genes_mask <- c() # mapping order to pivot
+genes_mask <- c()
+genes_map <- c()
 
 if (gene_map_method == "entrez") {
 
-  for (t in gene_map_pivot) {
+  # the entrez ids are the original primary key in out gene annotation table.
+  # the entrez id are not duplicated. so it is the most striaght-forward way.
 
-    if (is.na(t)) {
-      genes_mask <- c(genes_mask, FALSE)
-      next
-    }
+  m <- match(gene_map_pivot, genes $ entrez)
 
-    ids <- grep(paste("^", t, "$", sep = ""),
-                genes $ entrez, ignore.case = FALSE)
-    if (ids |> length() == 0) {
-      genes_notfound <- c(genes_notfound, t)
-      genes_mask <- c(genes_mask, FALSE)
-    } else if (ids |> length() == 1) {
-      genes_map <- c(genes_map, ids)
-      genes_mask <- c(genes_mask, TRUE)
-    } else {
-      genes_map <- c(genes_map, ids[1])
-      genes_duplicate <- c(genes_duplicate, ids[2:length(ids)])
-      genes_mask <- c(genes_mask, TRUE)
-    }
-  }
-  genes_missing <- setdiff(seq_along(genes), c(genes_map, genes_duplicate))
+  # if the gene mapping is not found in reference, a NA will occur.
+  # if duplicate match, the same index is called again.
+  # if the reference is duplicated, will only return the first match.
 
-} else if (gene_map_method == "refseq" || gene_map_method == "capitalize") {
+  genes_notfound <- gene_map_pivot[is.na(m)]
+  genes_duplicate <- gene_map_pivot[duplicated(m[!is.na(m)])]
+  genes_mask <- !is.na(m)
+  genes_map <- m[!is.na(m)]
+
+  expr_count <- expr_count[genes_mask, ]
+  genes_meta <- genes[genes_map, ]
+
+  expr_count <- expr_count[!duplicated(genes_meta $ entrez), ]
+  genes_meta <- genes_meta[!duplicated(genes_meta $ entrez), ]
+
+  # may have duplicated names (tRNAs, see below), but no duplicated entrez.
+  # for these genes, we will just keep the first one.
+
+  # HOWEVER, YOU SHOULD MANUALLY CHECK WHETHER THE DUPLICATED NAMES ARE ONE
+  # THING. this get better resolved in the recent releases of annotations,
+  # however, some annotations may use the same name as completely different
+  # abbreviations of gene full name.
+
+  # "
+  #     However, I can say definitively that you should NOT merge the
+  #     expression values of genes that have the same symbol. Gene symbols
+  #     seem to shuffle around more haphazardly than Ensembl IDs or Entrez
+  #     IDs, and so it is pretty common for completely different genes to
+  #     be labeled with the same gene symbol depending on which gene
+  #     annotation builds are being used.
+  #
+  #     Which brings me to my next point. You will save yourself some
+  #     headaches if you know what gene annotation build was used in
+  #     originally mapping your RNA-seq reads to Ensembl IDs. Use the
+  #     same build to translate from Ensembl IDs to gene symbols. This
+  #     won't necessarily get rid of all issues, but it will be a big help.
+  #                                                                          "
+  #                      <https://www.researchgate.net/post/How-to-deal-with-
+  #                       multiple-ensemble-IDs-mapping-to-one-gene-symbol-in-
+  #                       a-RNA-Seq-dataset>
+
+} else if (gene_map_method == "hgnc") {
 
   # in this case, we will face disturbing naming problems. some of the genes
   # do not have the same name. it should be noted that mitochondrial genes are
@@ -146,7 +175,7 @@ if (gene_map_method == "entrez") {
     "CYTB", "ATP6", "ATP8"
   )
 
-  mitos_2 <- paste("mt-", mitos_ncbi, sep = "")
+  mitos_2 <- paste("MT-", mitos_ncbi, sep = "")
 
   # don't be confused with these cox1/2/3. they represent cytochrome oxidase.
   # the inflammatory cytokine synthase cox-1/2 are officially named
@@ -165,78 +194,109 @@ if (gene_map_method == "entrez") {
   # the names are constantly varying. you may encounter false misses when using
   # names to specify genes.
 
-  mitos_id <- c()
-  for (m in mitos_ncbi) {
-    mitos_id <- c(mitos_id, grep(paste("^", m, "$", sep = ""),
-                                 genes $ name))
+  # we do not use the former lists as mitochondrial gene names. these are only
+  # shown as examples of what contained in the mt genome. in our new reference
+  # construction procedures, we has a `mito` column indicating whether the gene
+  # is a mitochondrial gene. (do not consider plants though ;-) ...
+
+  # for human there are roughly five cases (or two genes, both tRNA-encoding)
+  # faces the condition that they have shared name but with different entrez.
+  # the mouse genome have not even one. i think we can disgard them.
+
+  genes_chr <- genes[!genes $ mito, ]
+
+  m <- match(gene_map_pivot, genes_chr $ gene)
+  genes_notfound <- gene_map_pivot[is.na(m)] # mito genes should not be found.
+  genes_duplicate <- gene_map_pivot[duplicated(m[!is.na(m)])]
+  genes_mask <- !is.na(m)
+  genes_map <- m[!is.na(m)]
+
+  expr_count_chr <- expr_count[genes_mask, ]
+  genes_meta <- genes_chr[genes_map, ]
+
+  expr_count_chr <- expr_count_chr[!duplicated(genes_meta $ entrez), ]
+  genes_meta <- genes_meta[!duplicated(genes_meta $ entrez), ]
+
+  # process mitochondrial genes separately
+
+  genes_mito <- genes[genes $ mito, ]
+  mmt <- match(gene_map_pivot, genes_mito $ gene)
+  if (sum(!is.na(mmt)) == 0) # all the genes not found. suggesting a name error
+    mmt <- match(gene_map_pivot, paste("mt-", genes_mito $ gene))
+  if (sum(!is.na(mmt)) == 0) # again
+    mmt <- match(gene_map_pivot, paste("MT-", genes_mito $ gene))
+  if (sum(!is.na(mmt)) == 0) # again
+    mmt <- match(gene_map_pivot, paste("Mt-", genes_mito $ gene))
+  if (sum(!is.na(mmt)) == 0) # again
+    mmt <- match(gene_map_pivot, paste("MT", genes_mito $ gene))
+  if (sum(!is.na(mmt)) == 0) # again
+    mmt <- match(gene_map_pivot, paste("mt", genes_mito $ gene))
+  if (sum(!is.na(mmt)) == 0) # again
+    mmt <- match(gene_map_pivot, paste("Mt", genes_mito $ gene))
+
+  mt_mask <- !is.na(mmt)
+  mt_map <- mmt[!is.na(mmt)]
+
+  expr_count_mt <- expr_count[mt_mask, ]
+  genes_meta_mt <- genes_mito[mt_map, ]
+
+  expr_count_mt <- expr_count_mt[!duplicated(genes_meta_mt $ entrez), ]
+  genes_meta_mt <- genes_meta_mt[!duplicated(genes_meta_mt $ entrez), ]
+
+  newfound_name <- expr_count_mt |> pull(pivot_name)
+
+  cat(crlf, yellow("found these mitochondrial genes:"), crlf)
+  if (length(newfound_name) > 0) {
+    cat("    ")
+    print(newfound_name)
+  } else {
+    cat("   ", red("not a single mitochondrial genes found, check your data!"))
+    cat(crlf)
   }
 
-  for (t in gene_map_pivot) {
-
-    if (is.na(t)) {
-      genes_mask <- c(genes_mask, FALSE)
-      next
-    }
-
-    ids <- grep(paste("^", t, "$", sep = ""),
-                genes $ name, ignore.case = TRUE)
-
-    if (startsWith(str_to_lower(t), "mt")) {
-      ids <- mitos_id[
-        grep(paste("^", t, "$", sep = ""), mitos_2, ignore.case = TRUE)
-      ]
-
-      if (length(ids) == 0) ids <- mitos_id[
-        grep(paste("^", t, "$", sep = ""), mitos_3, ignore.case = TRUE)
-      ]
-    }
-
-    if (ids |> length() == 0) {
-      genes_notfound <- c(genes_notfound, t)
-      genes_mask <- c(genes_mask, FALSE)
-    } else if (ids |> length() == 1) {
-      genes_map <- c(genes_map, ids)
-      genes_mask <- c(genes_mask, TRUE)
-    } else {
-      genes_map <- c(genes_map, ids[1])
-      genes_duplicate <- c(genes_duplicate, ids[2:length(ids)])
-      genes_mask <- c(genes_mask, TRUE)
-    }
-  }
-  genes_missing <- setdiff(seq_along(genes), c(genes_map, genes_duplicate))
+  genes_notfound <- base::setdiff(genes_notfound, newfound_name)
+  expr_count <- rbind(expr_count_mt, expr_count_chr)
+  genes_meta <- rbind(genes_meta_mt, genes_meta)
 
 } else if (gene_map_method == "ensembl") {
 
-  for (t in gene_map_pivot) {
+  dcensem <- decollapse(genes, "ensembl", sep = ";")
+  m <- match(gene_map_pivot, dcensem $ ensembl)
 
-    if (is.na(t)) {
-      genes_mask <- c(genes_mask, FALSE)
-      next
-    }
+  # if the gene mapping is not found in reference, a NA will occur.
+  # if duplicate match, the same index is called again.
+  # if the reference is duplicated, will only return the first match.
 
-    ids <- grep(paste(t, sep = ""),
-                genes $ ensembl, ignore.case = TRUE)
-    if (ids |> length() == 0) {
-      genes_notfound <- c(genes_notfound, t)
-      genes_mask <- c(genes_mask, FALSE)
-    } else if (ids |> length() == 1) {
-      genes_map <- c(genes_map, ids)
-      genes_mask <- c(genes_mask, TRUE)
-    } else {
-      genes_map <- c(genes_map, ids[1])
-      genes_duplicate <- c(genes_duplicate, ids[2:length(ids)])
-      genes_mask <- c(genes_mask, TRUE)
-    }
-  }
-  genes_missing <- setdiff(seq_along(genes), c(genes_map, genes_duplicate))
+  genes_notfound <- gene_map_pivot[is.na(m)]
+  genes_duplicate <- gene_map_pivot[duplicated(m[!is.na(m)])]
+  genes_mask <- !is.na(m)
+  genes_map <- m[!is.na(m)]
+
+  expr_count <- expr_count[genes_mask, ]
+  genes_meta <- dcensem[genes_map, ]
+
+  expr_count <- expr_count[!duplicated(genes_meta $ ensembl), ]
+  genes_meta <- genes_meta[!duplicated(genes_meta $ ensembl), ]
 
 } else {
   cat(crlf, red("error:"), "invalid mapping method!", crlf)
   q(save = "no", status = 1)
 }
 
+# print duplicated names
+dup_name <- genes_meta[duplicated(genes_meta $ gene), ] $ gene |> unique()
+dup_name <- genes_meta[
+  pull(genes_meta, "gene") %in% dup_name,
+  c("gene", "entrez", ".start", ".end", ".strand", ".seqid")
+]
+
+if (nrow(dup_name) > 0) {
+  cat(crlf, red("these gene names got duplicated!"), crlf, crlf)
+  print(dup_name)
+}
+
 # print mapping result.
-cat(crlf, genes_map |> length() |> green() |> italic(),
+cat(crlf, expr_count |> nrow() |> green() |> italic(),
     italic("genes assigned."), crlf)
 
 if (genes_notfound |> length() > 0)
@@ -247,24 +307,13 @@ if (genes_notfound |> length() > 0)
     "...", crlf
   )
 
-if (genes_missing |> length() > 0)
-  cat(
-    crlf, genes_missing |> length() |> yellow() |> italic(),
-    italic("genes not detected.\n   "),
-    gene_names[genes_missing |> head()] |> str_c(collapse = " ") |> yellow() |> italic(), # nolint
-    "...", crlf
-  )
-
 if (genes_duplicate |> length() > 0)
   cat(
-    crlf, genes_duplicate |> length() |> cyan() |> italic(),
-    italic("duplicated genes in the database.\n   "),
-    gene_names[genes_duplicate |> head()] |> str_c(collapse = " ") |> cyan() |> italic(), # nolint
+    crlf, genes_duplicate |> length() |> red() |> italic(),
+    italic("genes duplicated.\n   "),
+    genes_duplicate |> head() |> str_c(collapse = " ") |> red() |> italic(),
     "...", crlf
   )
-
-expr_count <- expr_count[genes_mask, ]
-genes_meta <- genes[genes_map, ]
 
 for (cx in gene_meta_cols) {
   genes_meta[, paste("user_", cx, sep = "")] <- expr_count[, cx]
