@@ -308,3 +308,60 @@ my_genes <- row.names(
 
 cds_subset <- filtered[my_genes, ]
 plot_genes_in_pseudotime(cds_subset, color_by = "Hours")
+
+
+## 3.5  analyse branches of the cell trajectories ------------------------------
+
+# consider the experiment performed by steve quake's lab by barbara treutlein
+# and colleages, who captured cells from the developing mouse lung. they
+# captured cells early in development, later when the lung contains both major
+# types of epithelial cells (at1 and at2), and cells right about to make the
+# decision to become either at1 or at2. monocle can reconstruct this process
+# as a branched trajectory, allow you to analyze the decision point in great
+# detail. the figure below shows the trajectory monocle reconstructs using some
+# of their data. there is a single branch, labeled "1". what genes change as
+# cells pass from the early developmental stage the top left of the tree
+# through the branch? what genes are differentially expressed between the
+# branches? to answer this question, monocle provides you with a special
+# statistical test: branched expression analysis modeling, or beam.
+
+# beam takes as input a celldataset that's been ordered with ordercells and the
+# name of a branch point in the trajectory. it returns a table of significance
+# scores for each gene. genes that score significant are said to be
+# branch-dependent in their expression.
+
+res <- BEAM(lung, branch_point = 1, cores = 1)
+res <- res[order(res$qval), ]
+res <- res[, c("gene_short_name", "pval", "qval")]
+
+# you can visualize changes for all the genes that are significantly branch
+# dependent using a special type of heatmap. this heatmap shows changes in both
+# lineages at the same time. it also requires that you choose a branch point
+# to inspect. columns are points in pseudotime, rows are genes, and the
+# beginning of pseudotime is in the middle of the heatmap. as you read from the
+# middle of the heatmap to the right, you are following one lineage through
+# pseudotime. as you read left, the other. the genes are clustered
+# hierarchically, so you can visualize modules of genes that have similar
+# lineage-dependent expression patterns.
+
+plot_genes_branched_heatmap(
+  lung[row.names(subset(res, qval < 1e-4)), ],
+  branch_point = 1, # which branch point?
+  num_clusters = 4, # how many forms of differences do you expect?
+  cores = 1,
+  use_gene_short_name = TRUE,
+  show_rownames = TRUE
+)
+
+# for each gene, you may plot a line chart.
+
+lung_genes <- row.names(
+  subset(fData(lung),
+         gene_short_name %in% c("Ccnd2", "Sftpb", "Pdpn"))
+)
+
+plot_genes_branched_pseudotime(
+  lung[lung_genes, ],
+  branch_point = 1,
+  color_by = "Time", ncol = 1
+)

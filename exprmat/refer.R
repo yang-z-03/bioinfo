@@ -32,10 +32,8 @@ parser $ add_argument(
 )
 
 parser $ add_argument(
-  "--mito", dest = "mtgenes", type = "character", nargs = "*",
-  default = c("COX1", "COX2", "COX3", "ND1", "ND2", "ND3", "ND4L", "ND4",
-              "ND5", "ND6", "CYTB", "ATP6", "ATP8"),
-  help = "specify the mitochondrial gene set for current taxo"
+  "-m", dest = "mt", type = "character",
+  help = "the sequence name of the mitochondrial genome"
 )
 
 parser $ add_argument(
@@ -56,6 +54,10 @@ if (length(vargs) == 0 ||
 } else {
   pargs <- parser $ parse_args(vargs)
 }
+
+# search a given taxo name in the annotation hub.
+# these annotations are largely based on ensembl. while we choose entrez as
+# the primary annotation keys since they are more beautiful :)
 
 if (pargs $ method == "search") {
 
@@ -80,7 +82,6 @@ if (pargs $ method == "search") {
 
 taxoinfo <- list()
 taxoinfo[["taxo"]] <- pargs $ taxo
-taxoinfo[["mt"]] <- pargs $ mtgenes
 taxoinfo[["s"]] <- pargs $ sgenes
 taxoinfo[["g2m"]] <- pargs $ g2mgenes
 saveRDS(taxoinfo, "taxo.rds")
@@ -100,13 +101,182 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
     selected_id_lines <- grep(id_pattern, genes $ Dbxref,
                               perl = TRUE, ignore.case = TRUE)
 
+    # commonly, every gene should have this field. and this selection will
+    # not be effective normally.
+
     ncbi_id <- sub(id_pattern, "\\3",
                    genes[selected_id_lines, "Dbxref"],
                    perl = TRUE, ignore.case = TRUE)
 
-    genes <- genes[selected_id_lines, ]
-    gene_table <- cbind(genes, ncbi_id)
+    #. duplicated(ncbi_id) |> sum()
+    #. dup_entrez <- duplicated(ncbi_id) # 5454
 
+    # lets check if there are duplicates ...
+    # there are 5454 duplicates in the human genome.
+    # there are genes that share the same entrez id but with different locations
+
+    #. duplicated(genes $ ID) |> sum()
+    #. dup_id <- duplicated(genes $ ID) # 3
+    # the genes ID field only contains 3 duplicates in the genome.
+    #. duplicated(genes $ gene) |> sum()
+    #. dup_name <- duplicated(genes $ gene) # 5471
+    #. duplicated(genes $ Name) |> sum() # 5471
+    #. genes $ Name != genes $ gene |> sum() # 0
+    # while the gene name field contains 5471 duplicates.
+
+    #. dup_id | dup_name |> sum() # 5471
+    #. dup_id & dup_name |> sum() # 3
+    # the 3 genes with duplicated ids are all in dup_name.
+
+    #. dup_entrez | dup_name |> sum() # 5471
+    #. dup_entrez & dup_name |> sum() # 5454
+    # the 5471 genes with duplicated entrez code is all in dup_name.
+
+    #. dup_entrez | dup_id |> sum() # 5457
+    #. dup_entrez & dup_id |> sum() # 0
+
+    # so, the venn graph will be:
+    #
+    #     dup entrez [5454]         dup ids [3]
+    #  <==============>      14      <======>
+    #  <====================================>
+    #                dup names[5471]
+    #
+
+    #. genes[dup_id, ] |> View()
+
+    # lets show which of the 3 item of duplicated ids is ...
+    # they have duplicated ids simply because their ID field is missing!
+
+    #. genes[dup_entrez, ] |> View()
+    #. genes[dup_entrez, ] $ ID |> is.na() |> sum()
+    #. genes[dup_entrez, ] $ gene |> duplicated() |> sum()
+    # these 5454 items are simple non-NA duplications.
+
+    #. rest_of_them <- (dup_name & !(dup_entrez | dup_id))
+    #. ncbi_id[rest_of_them] |> duplicated()
+    #. genes[rest_of_them, ] |> View() # 14
+    # having the same symbol, but with different id and entrez.
+    # these are all 14 tRNA transcripts.
+
+    genes <- genes[selected_id_lines, ]
+    gene_table <- cbind(genes, ncbi_id) # 48106 genes
+    # remove those with empty symbol names and IDs (just 4, throw away)
+    gene_table <- gene_table[- which(genes $ ID == ""), ] # 48102 genes
+
+    # by now, the only non-duplicated column is ID.
+
+    # it seems that the ncbi refseq is the least duplicated system that can be
+    # used though. in concerns of transcriptome mapping, we may just need the
+    # gene annotations on the well-defined chromosomes. by confining the .seqid
+    # field to those starting with NC_, we can obtain the 24 chromosomes (22XY)
+    # of human for example, and a special chromosome of mitochondria.
+
+    # for human, the mt genome is marked as: "NC_012920.1"
+
+    # after the filtering step for major chromosomes, we still have 39 gene
+    # name duplications listed below (for human): (and only 34 duplicated
+    # ncbi entrez ids (since the TRNAA/V are only five))
+
+    #    ncbi_id   .seqid       .type    .start      .end .strand gene
+    #    <chr>     <chr>        <chr>     <int>     <int> <chr>   <chr>
+    #  1 107985615 NC_000001.11 gene  145161108 145161178 +       TRNAV-CAC
+    #  2 124901561 NC_000006.12 gene   26771080  26771152 -       TRNAA-AGC
+    #  3 124901562 NC_000006.12 gene   26796209  26796281 -       TRNAA-AGC
+    #  4 124901563 NC_000006.12 gene   26814339  26814411 -       TRNAA-AGC
+    #  5 124901564 NC_000006.12 gene   26819109  26819181 -       TRNAA-AGC
+    #  6 55344     NC_000024.10 gene     276356    303356 +       PLCXD1
+    #  7 8225      NC_000024.10 gene     304759    318796 -       GTPBP6
+    #  8 283981    NC_000024.10 gene     319145    321332 +       LINC00685
+    #  9 28227     NC_000024.10 gene     333933    386907 -       PPP2R3B
+    # 10 102724521 NC_000024.10 gene     430021    472756 +       LOC102724521
+    # 11 6473      NC_000024.10 gene     624344    659411 +       SHOX
+    # 12 64109     NC_000024.10 gene    1190490   1212649 -       CRLF2
+    # 13 1438      NC_000024.10 gene    1268814   1325218 +       CSF2RA
+    # 14 124905238 NC_000024.10 gene    1293546   1293998 -       LOC124905238
+    # 15 100500894 NC_000024.10 gene    1293918   1293992 +       MIR3690
+    # 16 3563      NC_000024.10 gene    1336785   1382689 +       IL3RA
+    # 17 101928032 NC_000024.10 gene    1336972   1378476 -       LOC101928032
+    # 18 293       NC_000024.10 gene    1386152   1392113 -       SLC25A6
+    # 19 124900597 NC_000024.10 gene    1391993   1396881 +       LOC124900597
+    # 20 751580    NC_000024.10 gene    1397025   1399412 +       LINC00106
+    # 21 80161     NC_000024.10 gene    1400531   1415421 +       ASMTL-AS1
+    # 22 8623      NC_000024.10 gene    1403139   1453756 -       ASMTL
+    # 23 286530    NC_000024.10 gene    1462581   1537185 -       P2RY8
+    # 24 8227      NC_000024.10 gene    1591604   1602520 +       AKAP17A
+    # 25 438       NC_000024.10 gene    1615059   1643081 +       ASMT
+    # 26 105373105 NC_000024.10 gene    1732419   1755984 +       LINC02968
+    # 27 105379413 NC_000024.10 gene    1771053   1784602 +       LOC105379413
+    # 28 107985677 NC_000024.10 gene    1879515   1885827 -       LOC107985677
+    # 29 207063    NC_000024.10 gene    2219506   2500976 -       DHRSX
+    # 30 124905239 NC_000024.10 gene    2320639   2337671 +       LOC124905239
+    # 31 9189      NC_000024.10 gene    2486435   2500976 -       ZBED1
+    # 32 101928092 NC_000024.10 gene    2566029   2609240 -       LINC03112
+    # 33 102464837 NC_000024.10 gene    2609191   2609254 +       MIR6089
+    # 34 100359394 NC_000024.10 gene    2612991   2615347 -       LINC00102
+    # 35 4267      NC_000024.10 gene    2691295   2741309 +       CD99
+    # 36 10251     NC_000024.10 gene   56923423  56968979 +       SPRY3
+    # 37 6845      NC_000024.10 gene   57067865  57130289 +       VAMP7
+    # 38 3581      NC_000024.10 gene   57184072  57197869 +       IL9R
+    # 39 100128260 NC_000024.10 gene   57201084  57203350 -       WASIR1
+
+    # the reason of duplication is fairly clear for human:
+    #
+    # (1) the genes encoding tRNAs just have multiple positions on the
+    #     chromosome, these genes have different entrez ids in the ncbi database
+    #     but just must have the same name. the behavior on dealing with such
+    #     genes in transcriptomic sequencing will be merging the genes with
+    #     the same name and add their expression together.
+    #
+    # (2) the genes are alleles between the X and Y chromosome. this is the
+    #     only included paired chromosome in the genome. so they must have same
+    #     genes. they have the same ncbi entrez numbers since they are alleles.
+
+    chrfilter <- stringr::str_starts(gene_table $ .seqid, "NC")
+    gene_table <- gene_table[chrfilter, ]
+
+    # and here is the mitochondrial genome for human:
+
+    #    ncbi_id .seqid      .start  .end .strand gene  gene_biotype
+    #    <chr>   <chr>        <int> <int> <chr>   <chr> <chr>
+    #  1 4558    NC_012920.1    577   647 +       TRNF  tRNA
+    #  2 4549    NC_012920.1    648  1601 +       RNR1  rRNA
+    #  3 4577    NC_012920.1   1602  1670 +       TRNV  tRNA
+    #  4 4550    NC_012920.1   1671  3229 +       RNR2  rRNA
+    #  5 4567    NC_012920.1   3230  3304 +       TRNL1 tRNA
+    #  6 4535    NC_012920.1   3307  4262 +       ND1   protein_coding
+    #  7 4565    NC_012920.1   4263  4331 +       TRNI  tRNA
+    #  8 4572    NC_012920.1   4329  4400 -       TRNQ  tRNA
+    #  9 4569    NC_012920.1   4402  4469 +       TRNM  tRNA
+    # 10 4536    NC_012920.1   4470  5511 +       ND2   protein_coding
+    # 11 4578    NC_012920.1   5512  5579 +       TRNW  tRNA
+    # 12 4553    NC_012920.1   5587  5655 -       TRNA  tRNA
+    # 13 4570    NC_012920.1   5657  5729 -       TRNN  tRNA
+    # 14 4511    NC_012920.1   5761  5826 -       TRNC  tRNA
+    # 15 4579    NC_012920.1   5826  5891 -       TRNY  tRNA
+    # 16 4512    NC_012920.1   5904  7445 +       COX1  protein_coding
+    # 17 4574    NC_012920.1   7446  7514 -       TRNS1 tRNA
+    # 18 4555    NC_012920.1   7518  7585 +       TRND  tRNA
+    # 19 4513    NC_012920.1   7586  8269 +       COX2  protein_coding
+    # 20 4566    NC_012920.1   8295  8364 +       TRNK  tRNA
+    # 21 4509    NC_012920.1   8366  8572 +       ATP8  protein_coding
+    # 22 4508    NC_012920.1   8527  9207 +       ATP6  protein_coding
+    # 23 4514    NC_012920.1   9207  9990 +       COX3  protein_coding
+    # 24 4563    NC_012920.1   9991 10058 +       TRNG  tRNA
+    # 25 4537    NC_012920.1  10059 10404 +       ND3   protein_coding
+    # 26 4573    NC_012920.1  10405 10469 +       TRNR  tRNA
+    # 27 4539    NC_012920.1  10470 10766 +       ND4L  protein_coding
+    # 28 4538    NC_012920.1  10760 12137 +       ND4   protein_coding
+    # 29 4564    NC_012920.1  12138 12206 +       TRNH  tRNA
+    # 30 4575    NC_012920.1  12207 12265 +       TRNS2 tRNA
+    # 31 4568    NC_012920.1  12266 12336 +       TRNL2 tRNA
+    # 32 4540    NC_012920.1  12337 14148 +       ND5   protein_coding
+    # 33 4541    NC_012920.1  14149 14673 -       ND6   protein_coding
+    # 34 4556    NC_012920.1  14674 14742 -       TRNE  tRNA
+    # 35 4519    NC_012920.1  14747 15887 +       CYTB  protein_coding
+    # 36 4576    NC_012920.1  15888 15953 +       TRNT  tRNA
+    # 37 4571    NC_012920.1  15956 16023 -       TRNP  tRNA
+    
     suppressPackageStartupMessages(
       {
         require(AnnotationHub)
@@ -173,6 +343,7 @@ if (file.exists(paste(gp_refseq, pargs $ taxo, "genomic.gff.table", sep = "/")) 
       by.x = "ncbi_id", by.y = "ncbi_id"
     )
 
+    # this removal of duplicate need further investigation on why this occurs!
     merged_table <- merged_table[!duplicated(merged_table), ] |> tibble()
     cat(crlf)
     print(merged_table)
