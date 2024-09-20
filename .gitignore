@@ -39,6 +39,9 @@ nucleotides/*
 !nucleotides/umis.txt
 !nucleotides/data-archives.txt
 
+indices/*
+!indices/readme
+
 tax/ncbi.sql
 
 analyses

@@ -65,7 +65,7 @@ def write_sub_fp(fp, start, length, of):
             of.write(line)
         
         elif (mod == 1) or (mod == 3):
-            of.write(line[start, start + length] + '\n')
+            of.write(line[start : start + length] + '\n')
         
         else:
             of.write('+\n')

@@ -46,7 +46,7 @@ decollapse <- function(data, col, sep = ";") {
   }
 
   l <- data |> dplyr::select(-c(col))
-  l <- l[index]
+  l <- l[index, ]
   l[[col]] <- unlist(indexlist)
 
   return(l)
