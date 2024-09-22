@@ -109,13 +109,17 @@ if (file.exists(paste(gp_gencode, pargs $ taxo, "genomic.gff.table", sep = "/"))
     # we remove genes with duplicate id and assign chromosome identity
 
     chrfilter <- stringr::str_starts(gene_table $ .seqid, "chr")
-    mitofilter <- stringr::str_starts(gene_table $ .seqid, pargs $ mt)
-    chrfilter <- chrfilter & (!mitofilter)
+
+    #. mitofilter <- stringr::str_starts(gene_table $ .seqid, pargs $ mt)
+    #. chrfilter <- chrfilter & (!mitofilter)
+
     gene_table <- gene_table[chrfilter, ]
-    cat(blue(nrow(gene_table)), blue("genes in primary chromosome assembly"), crlf)
+    cat(blue(nrow(gene_table)),
+        blue("genes in primary chromosome assembly"), crlf)
 
     gene_table <- gene_table[!duplicated(gene_table $ gene_id), ]
-    cat(blue(nrow(gene_table)), blue("genes with non-duplicated ensembl id"), crlf)
+    cat(blue(nrow(gene_table)),
+        blue("genes with non-duplicated ensembl id"), crlf)
 
     # and here is the mitochondrial genome for mice in ensembl:
 
@@ -156,15 +160,24 @@ if (file.exists(paste(gp_gencode, pargs $ taxo, "genomic.gff.table", sep = "/"))
     # 33 ENSMUSG00000064368.1 chrM    13552 14070 -       mt-Nd6    protein_c...
     # 34 ENSMUSG00000064369.1 chrM    14071 14139 -       mt-Te     Mt_tRNA
     # 35 ENSMUSG00000064370.1 chrM    14145 15288 +       mt-Cytb   protein_c...
-    # 36 ENSMUSG00000064371.1 chrM    15289 15355 +       mt-Tt     Mt_tRNA       
+    # 36 ENSMUSG00000064371.1 chrM    15289 15355 +       mt-Tt     Mt_tRNA
     # 37 ENSMUSG00000064372.1 chrM    15356 15422 -       mt-Tp     Mt_tRNA
 
     mtids <- stringr::str_starts(gene_table $ .seqid, pargs $ mt)
     gene_table $ mito <- mtids
+    cat(blue(sum(mtids)),
+        blue("genes from mitochondrial genome"), crlf)
+
+    # separate the ensembl accession and version
+    gene_table <- gene_table |>
+      tidyr::separate_wider_delim(
+        gene_id, delim = ".",
+        names = c("ensembl", "ensembl_version")
+      )
 
     # convert to seurat-compatible gene names (_ is not allowed)
     gene_table $ seurat_names <-
-      stringr::str_replace_all(gene_table $ gene, "_", "-")
+      stringr::str_replace_all(gene_table $ gene_name, "_", "-")
 
     suppressPackageStartupMessages(
       {
@@ -182,7 +195,7 @@ if (file.exists(paste(gp_gencode, pargs $ taxo, "genomic.gff.table", sep = "/"))
     all_genes <- data.frame(all_genes) |> t()
 
     batch <- 5000
-    ensembl <- gene_table $ gene_id
+    ensembl <- gene_table $ ensembl
 
     for (x in seq(1, length(ensembl), batch)) {
       start <- x
@@ -232,7 +245,7 @@ if (file.exists(paste(gp_gencode, pargs $ taxo, "genomic.gff.table", sep = "/"))
     merged_table <- merge(
       gene_table, all_genes,
       all.x = TRUE, all.y = TRUE,
-      by.x = "gene_id", by.y = "ensembl"
+      by.x = "ensembl", by.y = "ensembl"
     )
 
     # this removal of duplicate need further investigation on why this occurs!
