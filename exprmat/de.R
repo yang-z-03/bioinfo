@@ -248,14 +248,14 @@ switch(
 
       # here, we should compare each clusters separately to generate for each
       # a list of genes that are differentially expressed.
-      
+
       groups <- total <- shared[[".psbulk"]] |> Idents() |> levels()
       if (pargs $ cmp.cluster[1] != "*")
         groups <- pargs $ cmp.cluster
-      
+
       withclust <- pargs $ with.cluster
       if (pargs $ with.cluster[1] == "*") withclust <- NULL
-      
+
       delist <- list()
       is_first <- TRUE
       for (group in groups) {
