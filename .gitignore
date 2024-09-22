@@ -42,6 +42,9 @@ nucleotides/*
 indices/*
 !indices/readme
 
+prots/*
+!prots/readme
+
 tax/ncbi.sql
 
 analyses

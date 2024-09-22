@@ -22,6 +22,12 @@ parser $ add_argument(
   dest = "method", const = "str"
 )
 
+parser $ add_argument(
+  "-c", dest = "cols", type = "character",
+  default = c(), nargs = "+",
+  help = "see only specified column (only work for tibbles)"
+)
+
 if (length(vargs) == 0 ||
       (length(vargs) == 1 && (vargs[1] == "-h" || vargs[1] == "--help"))) {
   parser $ print_help()
@@ -58,6 +64,11 @@ switch(
       print(shared[[pargs $ object]] |> colnames())
     } else {
       cat(yellow("  more than 200 columns, omitted."), crlf)
+    }
+
+    if (pargs $ cols |> length() > 0) {
+      cat(yellow("selected columns view:"), crlf)
+      print(shared[[pargs $ object]][, pargs $ cols])
     }
   }
 )

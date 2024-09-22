@@ -24,28 +24,12 @@ shared[["is_reference_assigned"]] <- FALSE
 shared[["is_loaded"]] <- FALSE
 shared[["is_qc"]] <- FALSE
 shared[["is_norm"]] <- FALSE
-shared[["is_integrate"]] <- FALSE
 
 if (file.exists("genome.rds")) {
   shared[["is_reference_assigned"]] <- TRUE
 }
 
 # autoloads
-
-if (file.exists("integrated.rds")) {
-  shared[["is_integrate"]] <- TRUE
-  shared[["is_norm"]] <- TRUE
-  shared[["seurat"]] <- readRDS("integrated.rds")
-  shared[["meta_gene"]] <- readRDS("genes-meta.rds")
-  cat(blue("autoload from integrated.rds and genes-meta.rds"), crlf)
-  cat(yellow("a valid integrated dataset is detected."), crlf)
-  stop()
-
-} else {
-  shared[["is_integrate"]] <- FALSE
-  shared[["meta_gene"]] <- NULL
-  shared[["seurat"]] <- NULL
-}
 
 if (file.exists("norm/linear.rds") &&
       file.exists("norm/log.rds") &&

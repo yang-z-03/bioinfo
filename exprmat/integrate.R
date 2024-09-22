@@ -187,8 +187,8 @@ seurat_raw_data_only <- function(srat, pargs) {
 # information, we will merge the default splits, and re-split by ourself
 # make sure you have a shared meta data column indicating the grouping.
 
-if (file.exists("integrated.rds")) {
-  merged <- readRDS("integrated.rds")
+if (file.exists("norm/seurat.rds")) {
+  merged <- readRDS("norm/seurat.rds")
 
 } else {
 
@@ -258,7 +258,7 @@ if (file.exists("integrated.rds")) {
 }
 
 if (pargs $ merge) {
-  saveRDS(merged, "integrated.rds")
+  saveRDS(merged, "norm/seurat.rds")
   stop()
 }
 

@@ -11,7 +11,6 @@ shared[["is_reference_assigned"]] <- FALSE
 shared[["is_loaded"]] <- FALSE
 shared[["is_qc"]] <- FALSE
 shared[["is_norm"]] <- FALSE
-shared[["is_integrate"]] <- FALSE
 
 .libPaths(c(
   "/home/yang-z/R/bioinfo/4.4",
@@ -114,7 +113,10 @@ while (TRUE) { # nolint
         "view", "clear", "table",
 
         # manipulating seurat object
-        "chassay", "dim", "intgmeta", "cname", "w"
+        "chassay", "dim", "intgmeta", "cname", "w",
+
+        # proteomics
+        "readp"
 
       )) {
 
@@ -141,11 +143,6 @@ while (TRUE) { # nolint
   }
 
   # here, we will update the shared status after running every command.
-
-  if (file.exists("integrated.rds")) {
-    shared[["is_norm"]] <- TRUE
-    shared[["is_integrate"]] <- TRUE
-  }
 
   if (file.exists("genome.rds")) {
     shared[["is_reference_assigned"]] <- TRUE

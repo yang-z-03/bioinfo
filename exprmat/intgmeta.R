@@ -17,7 +17,7 @@ if (length(vargs) == 0 ||
   pargs <- parser $ parse_args(vargs)
 }
 
-if (!shared[["is_integrate"]]) {
+if (!shared[["is_norm"]]) {
   cat(red("you should run integrate first"), crlf)
   stop()
 }
@@ -55,5 +55,5 @@ for (cx in rownames(shared[["seurat"]])) {
 }
 
 meta <- merged_gene_info[ord, ]
-saveRDS(meta, "genes-meta.rds")
+saveRDS(meta, "norm/genes-meta.rds")
 shared[["meta_gene"]] <- meta
