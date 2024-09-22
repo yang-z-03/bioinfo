@@ -11,6 +11,7 @@ shared[["is_reference_assigned"]] <- FALSE
 shared[["is_loaded"]] <- FALSE
 shared[["is_qc"]] <- FALSE
 shared[["is_norm"]] <- FALSE
+shared[["is_ready"]] <- FALSE
 
 parser <- argparse::ArgumentParser(
   prog = "exprmat",
@@ -132,7 +133,7 @@ while (TRUE) { # nolint
         "gffindex", "gffselect", "gffexonlen", "refer", "refer.gencode",
 
         # input source specification
-        "read", "read10x", "integrate", "group",
+        "read", "read10x", "integrate", "group", "intgmeta", "intsmeta",
 
         # quality control
         "qc",
@@ -148,7 +149,7 @@ while (TRUE) { # nolint
         "view", "clear", "table",
 
         # manipulating seurat object
-        "chassay", "dim", "intgmeta", "cname", "w",
+        "chassay", "dim", "cname", "w",
 
         # proteomics
         "readp", "normp"
@@ -199,5 +200,11 @@ while (TRUE) { # nolint
         file.exists("norm/log.rds") &&
         file.exists("norm/seurat.rds")) {
     shared[["is_norm"]] <- TRUE
+  }
+  
+  if (file.exists("norm/genes-meta.rds") &&
+      file.exists("norm/samples-meta.rds") &&
+      file.exists("norm/seurat.rds")) {
+    shared[["is_ready"]] <- TRUE
   }
 }

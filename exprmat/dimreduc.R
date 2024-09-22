@@ -201,7 +201,7 @@ if (pargs $ title == "") pargs $ title <- NULL
 pargs $ x <- stringr::str_replace_all(pargs $ x, "_", " ")
 pargs $ y <- stringr::str_replace_all(pargs $ y, "_", " ")
 
-if (!shared[["is_norm"]]) {
+if (!shared[["is_ready"]]) {
   cat("you should normalize to generate a seurat object for later analysis")
   stop()
 }

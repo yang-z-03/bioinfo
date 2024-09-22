@@ -64,7 +64,7 @@ if (is.na(gene_map_pivot) |> sum() > 0)
       "   contains", red(is.na(gene_map_pivot) |> sum()), "NAs", crlf)
 
 genes <- readRDS("genome.rds")
-gene_names <- genes $ name
+gene_names <- genes $ gene
 
 genes_notfound <- c()
 genes_duplicate <- c()

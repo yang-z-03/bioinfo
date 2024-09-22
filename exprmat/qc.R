@@ -89,7 +89,7 @@ taxo <- readRDS("taxo.rds")
 sample_meta $ reads <- colSums(expr_count)
 
 expr_mt <- expr_count[genes_meta $ mito, ]
-expr_rb <- expr_count[grep("^RP[LS]", genes_meta $ name, ignore.case = TRUE), ]
+expr_rb <- expr_count[grep("^RP[LS]", genes_meta $ gene, ignore.case = TRUE), ]
 
 sample_meta $ pct_ribo <- colSums(expr_rb) / pull(sample_meta, "reads")
 sample_meta $ pct_mito <- colSums(expr_mt) / pull(sample_meta, "reads")

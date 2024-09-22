@@ -17,11 +17,6 @@ if (length(vargs) == 0 ||
   pargs <- parser $ parse_args(vargs)
 }
 
-if (!shared[["is_norm"]]) {
-  cat(red("you should run integrate first"), crlf)
-  stop()
-}
-
 if (length(pargs $ input) > 0) {
   run_names <- pargs $ input
 } else {
@@ -30,6 +25,9 @@ if (length(pargs $ input) > 0) {
 
 merged_gene_info <- NULL
 for (runname in run_names) {
+  if (runname == "data") next
+  if (runname == "norm") next
+  
   geneinfo <- readRDS(
     paste(".", runname, "norm", "genes-meta.rds", sep = "/")
   )
@@ -41,8 +39,8 @@ for (runname in run_names) {
   }
 }
 
-dup <- duplicated(pull(merged_gene_info, "name")) |
-  pull(merged_gene_info, "name") == ""
+dup <- duplicated(pull(merged_gene_info, "seurat_names")) |
+  pull(merged_gene_info, "seurat_names") == ""
 
 merged_gene_info <- merged_gene_info[!dup, ]
 
@@ -50,7 +48,7 @@ merged_gene_info <- merged_gene_info[!dup, ]
 
 ord <- c()
 for (cx in rownames(shared[["seurat"]])) {
-  id <- which(merged_gene_info $ name == cx)
+  id <- which(merged_gene_info $ seurat_names == cx)
   ord <- c(ord, id[1])
 }
 

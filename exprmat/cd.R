@@ -31,6 +31,23 @@ if (file.exists("genome.rds")) {
 
 # autoloads
 
+if (file.exists("norm/genes-meta.rds") &&
+    file.exists("norm/samples-meta.rds") &&
+    file.exists("norm/seurat.rds")) {
+  
+  shared[["is_ready"]] <- TRUE
+  shared[["meta_sample"]] <- readRDS("norm/samples-meta.rds")
+  shared[["meta_gene"]] <- readRDS("norm/genes-meta.rds")
+  shared[["seurat"]] <- readRDS("norm/seurat.rds")
+  cat(yellow("all normalization preprocesses are ready."), crlf)
+  stop()
+} else {
+  shared[["is_ready"]] <- FALSE
+  shared[["meta_sample"]] <- NULL
+  shared[["meta_gene"]] <- NULL
+  shared[["seurat"]] <- NULL
+}
+
 if (file.exists("norm/linear.rds") &&
       file.exists("norm/log.rds") &&
       file.exists("norm/seurat.rds")) {

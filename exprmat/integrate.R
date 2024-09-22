@@ -134,6 +134,11 @@ parser $ add_argument(
   help = paste("maximum training epoch")
 )
 
+parser $ add_argument(
+  "--regress", dest = "regr", type = "character", nargs = "*", default = c(),
+  help = paste("variables to regress when scaling")
+)
+
 if (length(vargs) == 0 ||
       (length(vargs) == 1 && (vargs[1] == "-h" || vargs[1] == "--help"))) {
   parser $ print_help()
@@ -201,6 +206,8 @@ if (file.exists("norm/seurat.rds")) {
   seurat_list <- list()
   for (runname in run_names) {
     if (runname == "data") next
+    if (runname == "norm") next
+
     if (file.exists(paste(".", runname, "norm", "seurat.rds", sep = "/"))) {
       original <- readRDS(
         paste(".", runname, "norm", "seurat.rds", sep = "/")
@@ -234,6 +241,9 @@ if (file.exists("norm/seurat.rds")) {
     }
   }
 
+  rmv <- c("data", "norm")
+  run_names <- run_names[!(run_names %in% rmv)]
+  
   # simply merge the list
 
   if (length(run_names) == 0) {
@@ -245,6 +255,7 @@ if (file.exists("norm/seurat.rds")) {
     merged <- seurat_list[[run_names[1]]]
   } else {
     merged <- seurat_list[[run_names[1]]]
+    cat(yellow("merging"), run_names[1], crlf)
     seurat_list[[run_names[1]]] <- NULL
     merged <- merge(merged, seurat_list, add.cell.ids = TRUE)
   }
@@ -275,9 +286,12 @@ merged[["RNA"]] <- split(merged[["RNA"]],
 
 if (!pargs $ nonorm) {
   if (!pargs $ sct) {
-    merged <- ScaleData(merged)
+    merged <- ScaleData(
+      merged, vars.to.regress = c(pargs $ dataset, pargs $ regr)
+    )
     merged <- FindVariableFeatures(merged)
   } else {
+    # here we do not use the variables to regress ...
     merged <- Seurat::SCTransform(merged, do.scale = TRUE, do.center = TRUE)
   }
 }
@@ -454,6 +468,7 @@ if (length(pargs $ input) > 0) {
 merged_gene_info <- NULL
 for (runname in run_names) {
   if (runname == "data") next
+  if (runname == "norm") next
 
   geneinfo <- readRDS(
     paste(".", runname, "norm", "genes-meta.rds", sep = "/")
@@ -466,8 +481,8 @@ for (runname in run_names) {
   }
 }
 
-dup <- duplicated(pull(merged_gene_info, "name")) |
-  pull(merged_gene_info, "name") == ""
+dup <- duplicated(pull(merged_gene_info, "seurat_names")) |
+  pull(merged_gene_info, "seurat_names") == ""
 
 merged_gene_info <- merged_gene_info[!dup, ]
 
@@ -475,7 +490,7 @@ merged_gene_info <- merged_gene_info[!dup, ]
 
 ord <- c()
 for (cx in rownames(shared[["seurat"]])) {
-  id <- which(merged_gene_info $ name == cx)
+  id <- which(merged_gene_info $ seurat_names == cx)
   ord <- c(ord, id[1])
 }
 

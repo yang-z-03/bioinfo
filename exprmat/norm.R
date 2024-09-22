@@ -88,9 +88,13 @@ expr_mat <- expr_count |> as("sparseMatrix")
 sample_meta <- readRDS("qc/samples-meta.rds")
 genes_meta <- readRDS("qc/genes-meta.rds")
 exonlen <- read.delim("exonlens.tsv")
+
+genes_meta $ .key <-
+  paste(genes_meta $ ensembl, genes_meta $ ensembl_version, sep = ".")
+
 genes_meta <- merge(
   x = genes_meta, y = exonlen[, c("symbol", "mean", "median", "merged")],
-  by.x = "name", by.y = "gene",
+  by.x = ".key", by.y = "symbol",
   all.x = TRUE, all.y = FALSE
 )
 
@@ -172,7 +176,7 @@ genes_meta <- genes_meta[!dedup, ]
 
 rownames(expr_mat) <- pull(genes_meta, "seurat_names")
 srat <- Seurat::CreateSeuratObject(
-  counts = Matrix::Matrix(expr_mat)
+  counts = as(expr_mat, "sparseMatrix")
 )
 
 if (pargs $ method == "seurat" || pargs $ method == "sct") {
