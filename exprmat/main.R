@@ -12,11 +12,46 @@ shared[["is_loaded"]] <- FALSE
 shared[["is_qc"]] <- FALSE
 shared[["is_norm"]] <- FALSE
 
-.libPaths(c(
-  "/home/yang-z/R/bioinfo/4.4",
-  "/usr/lib64/R/library",
-  "/usr/share/R/library"
-))
+parser <- argparse::ArgumentParser(
+  prog = "exprmat",
+  description = "pipeline for expression matrix"
+)
+
+parser $ add_argument(
+  "-s", type = "character", dest = "script", default = "",
+  help = "the input script file, will be executed line by line"
+)
+
+parser $ add_argument(
+  "--local-libs", dest = "local.lib", default = FALSE, action = "store_true",
+  help = "use local library"
+)
+
+pargs <- parser $ parse_args()
+
+cmdlist <- NULL
+if (file.exists(pargs $ script)) {
+  cmdlist <- readLines(con = file(pargs $ script, "r"), n = -1)
+}
+
+if (pargs $ local.lib) {
+  .libPaths(c(
+    "/home/yang-z/R/bioinfo/4.4",
+    "/usr/lib64/R/library",
+    "/usr/share/R/library"
+  ))
+}
+
+# global path resources
+
+gp_scrublet <- "~/bioinfo/scrublet"
+gp_singler <- "~/bioinfo/singler"
+gp_refseq <- "~/bioinfo/refseq"
+gp_gencode <- "~/bioinfo/gencode"
+gp_annot <- "~/bioinfo/annot"
+gp_base <- "~/bioinfo/exprmat"
+
+setwd(gp_base)
 
 suppressPackageStartupMessages({
   require(crayon)
@@ -39,14 +74,6 @@ suppressPackageStartupMessages({
   source("utils.R")
 })
 
-# global path resources
-
-gp_scrublet <- "~/bioinfo/scrublet"
-gp_singler <- "~/bioinfo/singler"
-gp_refseq <- "~/bioinfo/refseq"
-gp_annot <- "~/bioinfo/annot"
-gp_base <- "~/bioinfo/exprmat"
-
 # set up the common repl interface
 
 invoke_command <- function(src, vargs) {
@@ -65,7 +92,15 @@ read <- function() {
 while (TRUE) { # nolint
 
   cat(crlf)
-  command <- read()
+  if (length(cmdlist) == 0) {
+    command <- read()
+  } else {
+    command <- cmdlist[1]
+    cmdlist <- cmdlist[-1]
+    cat(crayon::green("(auto)$ "))
+    cat(command)
+    cat(crlf)
+  }
   cat(crlf)
 
   if (command == "ls") print(names(shared))
@@ -94,7 +129,7 @@ while (TRUE) { # nolint
         "cd",
 
         # reference construction and selection operations
-        "gffindex", "gffselect", "gffexonlen", "refer",
+        "gffindex", "gffselect", "gffexonlen", "refer", "refer.gencode",
 
         # input source specification
         "read", "read10x", "integrate", "group",
@@ -116,7 +151,7 @@ while (TRUE) { # nolint
         "chassay", "dim", "intgmeta", "cname", "w",
 
         # proteomics
-        "readp"
+        "readp", "normp"
 
       )) {
 

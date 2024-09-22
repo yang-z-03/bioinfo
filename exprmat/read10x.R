@@ -57,8 +57,7 @@ if (!is.null(expr_count |> colnames())) {
   print(head(expr_count |> colnames()))
 }
 
-pivot_name <- gene_map_pivot
-gene_map_pivot <- pull(expr_count, gene_map_pivot)
+gene_map_pivot <- expr_count_rownames
 
 if (is.na(gene_map_pivot) |> sum() > 0)
   cat(crlf, yellow("the pivot column contains NAs!"), crlf,
@@ -185,10 +184,6 @@ if (genes_duplicate |> length() > 0)
     genes_duplicate |> head() |> str_c(collapse = " ") |> red() |> italic(),
     "...", crlf
   )
-
-for (cx in gene_meta_cols) {
-  genes_meta[, paste("user_", cx, sep = "")] <- expr_count[, cx]
-}
 
 if (nrow(genes_meta) != nrow(expr_count)) {
   cat(crlf, red("error:"), "assertion failed, genes_meta has", nrow(genes_meta),

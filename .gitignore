@@ -47,6 +47,10 @@ prots/*
 
 tax/ncbi.sql
 
+gencode/10090/*
+!gencode/10090/genomic.gff.gz
+!gencode/10090/version
+
 analyses
 
 # msigdb/
