@@ -51,6 +51,10 @@ gencode/10090/*
 !gencode/10090/genomic.gff.gz
 !gencode/10090/version
 
+gencode/9606/*
+!gencode/9606/genomic.gff.gz
+!gencode/9606/version
+
 analyses
 
 # msigdb/
