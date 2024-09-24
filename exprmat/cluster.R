@@ -120,11 +120,16 @@ switch(
       }
     }
 
-    saveRDS(gene_meta, "norm/genes-meta.rds")
-    saveRDS(sample_meta, "norm/samples-meta.rds")
+    #. saveRDS(gene_meta, "norm/genes-meta.rds")
+    #. saveRDS(sample_meta, "norm/samples-meta.rds")
+    #. saveRDS(shared[["seurat"]], "norm/seurat.rds")
+    
+    # we should avoid too much file saving operations, since when the dimensions
+    # of the experiments grow large, these disk operation take too much time
+    # at an unnecessary frequency.
+    
     shared[["meta_gene"]] <- gene_meta
     shared[["meta_sample"]] <- sample_meta
-    saveRDS(shared[["seurat"]], "norm/seurat.rds")
   },
 
   seurat = {
@@ -142,10 +147,16 @@ switch(
     )
 
     # stores in the metadata column: seurat_clusters
+    
+    # we should avoid too much file saving operations, since when the dimensions
+    # of the experiments grow large, these disk operation take too much time
+    # at an unnecessary frequency.
+    
     Idents(shared[["seurat"]]) <- "seurat_clusters"
     shared[["meta_sample"]] $ seurat_clusters <-
       shared[["seurat"]] $ seurat_clusters
-    saveRDS(shared[["seurat"]], "norm/seurat.rds")
-    saveRDS(shared[["meta_sample"]], "norm/samples-meta.rds")
+    
+    #. saveRDS(shared[["seurat"]], "norm/seurat.rds")
+    #. saveRDS(shared[["meta_sample"]], "norm/samples-meta.rds")
   }
 )

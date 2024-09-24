@@ -64,6 +64,7 @@ suppressPackageStartupMessages({
   require(purrr)
   require(ggplot2)
   require(extrafont)
+  require(reticulate)
 
   require(SingleCellExperiment)
   require(SC3)
@@ -90,6 +91,8 @@ read <- function() {
   readLines("stdin", n = 1, encoding = "utf-8")
 }
 
+shlex <- reticulate::import("shlex")
+
 while (TRUE) { # nolint
 
   cat(crlf)
@@ -100,6 +103,11 @@ while (TRUE) { # nolint
     cmdlist <- cmdlist[-1]
     cat(crayon::green("(auto)$ "))
     cat(command)
+    
+    # detect comment chars
+    cmt <- str_locate(command, "#")[1, "start"] - 1
+    if (!is.na(cmt)) command <- substr(command, 1, cmt)
+    
     cat(crlf)
   }
   cat(crlf)
@@ -115,8 +123,11 @@ while (TRUE) { # nolint
   # exprmat-defined function utilities.
 
   else { # nolint
-
-    vargs <- str_split(command, " ")[[1]]
+    
+    # shell split
+    
+    vargs <- shlex $ split(command)
+    
     if (length(vargs) < 1) {
       next
     } else {
