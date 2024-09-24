@@ -32,11 +32,6 @@ parser $ add_argument(
 )
 
 parser $ add_argument(
-  "--red", dest = "redname", type = "character", default = "pca",
-  help = paste("pca dimension components taken into calculation")
-)
-
-parser $ add_argument(
   "--dim", dest = "dim", type = "integer", default = 30,
   help = paste("pca dimension components taken into calculation")
 )
@@ -160,7 +155,7 @@ parser $ add_argument(
 parser $ add_argument(
   "--rerun", dest = "rerun", default = FALSE,
   action = "store_true",
-  help = paste("do not plot legend")
+  help = paste("rerun the reduction even if there is one")
 )
 
 parser $ add_argument(

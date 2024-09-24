@@ -25,7 +25,7 @@ if (pargs $ object != ".") {
 
 } else {
 
-  if (!shared[["is_norm"]]) {
+  if (!shared[["is_ready"]]) {
     cat(red("you should generate a dataset before using analyses function 'w'"))
     cat(crlf)
     stop()

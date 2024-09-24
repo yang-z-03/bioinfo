@@ -25,6 +25,11 @@ parser $ add_argument(
 )
 
 parser $ add_argument(
+  "-g", dest = "expgene", type = "integer", default = 0,
+  help = "lower threshold for minimum gene detection"
+)
+
+parser $ add_argument(
   "-d", dest = "scrublet", action = "store_true", default = FALSE,
   help = "run scrublet estimation of doublets"
 )
@@ -94,6 +99,8 @@ expr_rb <- expr_count[grep("^RP[LS]", genes_meta $ gene, ignore.case = TRUE), ]
 sample_meta $ pct_ribo <- colSums(expr_rb) / pull(sample_meta, "reads")
 sample_meta $ pct_mito <- colSums(expr_mt) / pull(sample_meta, "reads")
 
+sample_meta $ detection <- colSums(expr_count > 0)
+
 suppressPackageStartupMessages(
   source(paste(gp_base, "scrublet.R", sep = "/"))
 )
@@ -125,7 +132,8 @@ if (upper_depth < 0)
 sample_meta $ qc <- (
   sample_meta $ pct_mito <= upper_mito &
     sample_meta $ reads >= lower_depth &
-    sample_meta $ reads <= upper_depth
+    sample_meta $ reads <= upper_depth &
+    sample_meta $ detection >= pargs $ expgene
 )
 
 if (lower_ribo > 0)
@@ -140,16 +148,15 @@ cat(green("per-sample qc:"), crlf)
 print(table(sample_meta $ qc))
 cat(crlf)
 
-sample_meta $ detection <- colSums(expr_count > 0)
 
 # filtering low-expression genes.
 
 expr_cells <- rowSums(expr_count > pargs $ minexpr)
 expr_thresh <- as.integer(ncol(expr_count) * pargs $ expr / 100)
-rowfilter <- expr_cells > expr_thresh
+rowfilter <- expr_cells >= expr_thresh
 
 cat(green("per-gene qc:"), crlf)
-print(table(expr_cells > expr_thresh))
+print(table(expr_cells >= expr_thresh))
 cat(crlf)
 
 if (pargs $ plot) suppressMessages({
