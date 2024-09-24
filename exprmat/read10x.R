@@ -113,7 +113,7 @@ if (pargs $ gene == 2) {
   expr_count_mt <- expr_count_mt[!duplicated(genes_meta_mt $ entrez), ]
   genes_meta_mt <- genes_meta_mt[!duplicated(genes_meta_mt $ entrez), ]
 
-  newfound_name <- expr_count_mt |> pull(pivot_name)
+  newfound_name <- gene_map_pivot[mt_mask]
 
   cat(crlf, yellow("found these mitochondrial genes:"), crlf)
   if (length(newfound_name) > 0) {

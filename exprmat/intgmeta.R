@@ -27,7 +27,7 @@ merged_gene_info <- NULL
 for (runname in run_names) {
   if (runname == "data") next
   if (runname == "norm") next
-  
+
   geneinfo <- readRDS(
     paste(".", runname, "norm", "genes-meta.rds", sep = "/")
   )

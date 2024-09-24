@@ -96,7 +96,7 @@ if (file.exists(paste(gp_gencode, pargs $ taxo, "genomic.gff.table", sep = "/"))
       paste(gp_gencode, pargs $ taxo, "genomic.gff.table", sep = "/"),
       sep = "\t", header = TRUE, comment.char = "#"
     )
-    
+
     gene_table <- genes |> tibble()
     # the ENSEMBL gene ids have no duplicates.
 

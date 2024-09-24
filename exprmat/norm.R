@@ -92,11 +92,23 @@ exonlen <- read.delim("exonlens.tsv")
 genes_meta $ .key <-
   paste(genes_meta $ ensembl, genes_meta $ ensembl_version, sep = ".")
 
+keytmp <- genes_meta $ .key
+
+# ====
+# FUCK
+# ====
+#
+# THE MERGE METHOD CHANGES THE ORDER OF GENES!!
+
 genes_meta <- merge(
   x = genes_meta, y = exonlen[, c("symbol", "mean", "median", "merged")],
   by.x = ".key", by.y = "symbol",
   all.x = TRUE, all.y = FALSE
 )
+
+# !! TURNS THE ORDER BACK
+gorder <- match(keytmp, genes_meta $ .key)
+genes_meta <- genes_meta[gorder, ]
 
 if (pargs $ method == "cpm") {
   norm_factors <- 1000000 / colSums(expr_mat)
@@ -175,8 +187,10 @@ expr_mat <- expr_mat[!dedup, ]
 genes_meta <- genes_meta[!dedup, ]
 
 rownames(expr_mat) <- pull(genes_meta, "seurat_names")
+colnames(expr_mat) <- pull(sample_meta, "id")
+
 srat <- Seurat::CreateSeuratObject(
-  counts = as(expr_mat, "sparseMatrix")
+  counts = expr_mat
 )
 
 if (pargs $ method == "seurat" || pargs $ method == "sct") {

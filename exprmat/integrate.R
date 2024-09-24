@@ -243,7 +243,7 @@ if (file.exists("norm/seurat.rds")) {
 
   rmv <- c("data", "norm")
   run_names <- run_names[!(run_names %in% rmv)]
-  
+
   # simply merge the list
 
   if (length(run_names) == 0) {

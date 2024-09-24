@@ -30,10 +30,45 @@ parser $ add_argument(
 
 pargs <- parser $ parse_args()
 
-cmdlist <- NULL
-if (file.exists(pargs $ script)) {
-  cmdlist <- readLines(con = file(pargs $ script, "r"), n = -1)
+# here, we resolve the line cutters
+
+parse_script <- function(fname) {
+  if (fname |> stringr::str_trim() |> stringr::str_length() == 0)
+    return(c())
+
+  cmdline <- NULL
+  if (file.exists(fname)) {
+    cmdline <- readLines(con = file(fname, "r"), n = -1)
+  } else {
+    cat(crayon::red(paste(fname, "not found.")))
+    return(c())
+  }
+
+  # here, we resolve the line cutters
+  cmdlist <- NULL
+  appendline <- FALSE
+  for (line in cmdline) {
+    if (appendline) {
+      cmdlist[length(cmdlist)] <- paste(
+        cmdlist[length(cmdlist)] |>
+          substr(1, stringr::str_length(cmdlist[length(cmdlist)]) - 1),
+        line |> stringr::str_trim(), sep = " "
+      )
+    } else {
+      cmdlist <- c(cmdlist, line |> stringr::str_trim())
+    }
+
+    if (line |> stringr::str_trim() |> stringr::str_ends("\\\\")) {
+      appendline <- TRUE
+    } else {
+      appendline <- FALSE
+    }
+  }
+
+  return(cmdlist)
 }
+
+cmdlist <- parse_script(pargs $ script)
 
 if (pargs $ local.lib) {
   .libPaths(c(
@@ -86,7 +121,11 @@ invoke_command <- function(src, vargs) {
   )
 }
 
+auto_mode <- FALSE
 read <- function() {
+  cwd <- basename(getwd())
+  if (auto_mode) cat(crayon::red("(auto) "))
+  cat(crayon::yellow(cwd))
   cat(crayon::green("$ "))
   readLines("stdin", n = 1, encoding = "utf-8")
 }
@@ -97,17 +136,22 @@ while (TRUE) { # nolint
 
   cat(crlf)
   if (length(cmdlist) == 0) {
+    auto_mode <- FALSE
     command <- read()
   } else {
+    auto_mode <- TRUE
     command <- cmdlist[1]
     cmdlist <- cmdlist[-1]
-    cat(crayon::green("(auto)$ "))
+
+    if (auto_mode) cat(crayon::red("(auto) "))
+    cat(crayon::yellow(basename(getwd())))
+    cat(crayon::green("$ "))
     cat(command)
-    
+
     # detect comment chars
     cmt <- str_locate(command, "#")[1, "start"] - 1
     if (!is.na(cmt)) command <- substr(command, 1, cmt)
-    
+
     cat(crlf)
   }
   cat(crlf)
@@ -123,11 +167,11 @@ while (TRUE) { # nolint
   # exprmat-defined function utilities.
 
   else { # nolint
-    
+
     # shell split
-    
+
     vargs <- shlex $ split(command)
-    
+
     if (length(vargs) < 1) {
       next
     } else {
@@ -163,7 +207,9 @@ while (TRUE) { # nolint
         "chassay", "dim", "cname", "w",
 
         # proteomics
-        "readp", "normp"
+        "readp", "normp",
+
+        "source"
 
       )) {
 
@@ -212,7 +258,7 @@ while (TRUE) { # nolint
         file.exists("norm/seurat.rds")) {
     shared[["is_norm"]] <- TRUE
   }
-  
+
   if (file.exists("norm/genes-meta.rds") &&
       file.exists("norm/samples-meta.rds") &&
       file.exists("norm/seurat.rds")) {

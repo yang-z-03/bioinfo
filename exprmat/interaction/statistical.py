@@ -27,7 +27,7 @@ cpdb_results = cpdb_statistical_analysis_method.call(
 
     # mandatory: normalized count matrix - a path to the counts file, or an in-memory AnnData object
     counts_file_path = '/home/yang-z/bioinfo/geo/GSE98638/cpdb/norm-counts.h5ad',
-    
+
     # defines the gene annotation in counts matrix.
     counts_data = 'hgnc_symbol',
 
@@ -52,7 +52,7 @@ cpdb_results = cpdb_statistical_analysis_method.call(
 
     # Sets the rounding for the mean values in significan_means.
     result_precision = 3,
-    
+
     # P-value threshold to employ for significance.
     pvalue = 0.05,
 
@@ -70,10 +70,10 @@ cpdb_results = cpdb_statistical_analysis_method.call(
 
     # Sets the string to employ to separate cells in the results dataframes "cellA|CellB".
     separator = '|',
-    
+
     # Saves all intermediate tables employed during the analysis in pkl format.
     debug = False,
-    
+
     output_path = '/home/yang-z/bioinfo/geo/GSE98638/cpdb',
 
     # Replaces the timestamp in the output files by a user defined string in the  (default: None).

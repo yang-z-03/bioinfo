@@ -293,7 +293,7 @@ switch(
           if (withgroup == group) next
           if (!(group %in% names(delist))) delist[[group]] <- list()
           if (!(group %in% names(denames))) denames[[group]] <- list()
-            
+
           cat(blue(paste("calculating differential expression between", group, 
                          "and", withgroup)), crlf)
 

@@ -34,7 +34,7 @@ if (file.exists("genome.rds")) {
 if (file.exists("norm/genes-meta.rds") &&
     file.exists("norm/samples-meta.rds") &&
     file.exists("norm/seurat.rds")) {
-  
+
   shared[["is_ready"]] <- TRUE
   shared[["meta_sample"]] <- readRDS("norm/samples-meta.rds")
   shared[["meta_gene"]] <- readRDS("norm/genes-meta.rds")
