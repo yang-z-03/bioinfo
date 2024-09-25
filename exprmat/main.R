@@ -100,6 +100,7 @@ suppressPackageStartupMessages({
   require(ggplot2)
   require(extrafont)
   require(reticulate)
+  reticulate::use_python("/home/data/yangzhen/miniconda/bin/python")
 
   require(SingleCellExperiment)
   require(SC3)

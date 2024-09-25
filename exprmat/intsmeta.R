@@ -24,7 +24,7 @@ if (length(pargs $ input) > 0) {
 }
 
 meta <- data.frame(
-  id = colnames(shared[["seurat"]])
+  .id = colnames(shared[["seurat"]])
 )
 
 for (x in pargs $ col) {
