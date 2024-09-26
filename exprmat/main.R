@@ -28,7 +28,12 @@ parser $ add_argument(
   help = "use local library"
 )
 
-pargs <- parser $ parse_args()
+parser $ add_argument(
+  "--dry-run", dest = "dry.run", default = FALSE, action = "store_true",
+  help = "prompt commands but do not run"
+)
+
+main_pargs <- parser $ parse_args()
 
 # here, we resolve the line cutters
 
@@ -68,9 +73,9 @@ parse_script <- function(fname) {
   return(cmdlist)
 }
 
-cmdlist <- parse_script(pargs $ script)
+cmdlist <- parse_script(main_pargs $ script)
 
-if (pargs $ local.lib) {
+if (main_pargs $ local.lib) {
   .libPaths(c(
     "/home/yang-z/R/bioinfo/4.4",
     "/usr/lib64/R/library",
@@ -122,10 +127,8 @@ invoke_command <- function(src, vargs) {
   )
 }
 
-auto_mode <- FALSE
 read <- function() {
   cwd <- basename(getwd())
-  if (auto_mode) cat(crayon::red("(auto) "))
   cat(crayon::yellow(cwd))
   cat(crayon::green("$ "))
   readLines("stdin", n = 1, encoding = "utf-8")
@@ -133,35 +136,173 @@ read <- function() {
 
 shlex <- reticulate::import("shlex")
 
+.current_index <- 1 # the line of code executing.
+.loop_restores <- c() # the line of loop startings
+.loop_break <- NULL # the line of loop ending
+.loop_indices <- c()
+.is_redirected <- FALSE
+
+.for_parser <- argparse::ArgumentParser(
+  prog = "for", description = "program control loops"
+)
+
+.for_parser $ add_argument(
+  "--in", type = "character", dest = "iter",
+  help = paste("index-able object, which should return true for either",
+               "is.data.frame or is.atomic")
+)
+
+.for_parser $ add_argument(
+  "ar", type = "character", nargs = "+",
+  help = paste("iterating objects")
+)
+
+command <- ""
+
 while (TRUE) { # nolint
 
-  cat(crlf)
-  if (length(cmdlist) == 0) {
-    auto_mode <- FALSE
+  if (command != "" &&
+        (!main_pargs $ dry.run) &&
+        (!.is_control)) cat(crlf)
+
+  .is_control <- FALSE
+
+  # the cmdlist variable stores the input command with automatic execution
+  # here, we only implement the most-used controls: the loops.
+  # we do not aim to be complete script language ...
+
+  .cmdlen <- length(cmdlist)
+
+  if (.current_index > .cmdlen) {
+    # the script is running over. read from the input.
     command <- read()
+    cmdlist <- c(cmdlist, command)
+    .current_index <- length(cmdlist)
   } else {
-    auto_mode <- TRUE
-    command <- cmdlist[1]
-    cmdlist <- cmdlist[-1]
-
-    if (auto_mode) cat(crayon::red("(auto) "))
-    cat(crayon::yellow(basename(getwd())))
-    cat(crayon::green("$ "))
-    cat(command)
-
+    # read from the cmdlist
+    commandstr <- cmdlist[.current_index] |> stringr::str_trim()
     # detect comment chars
-    cmt <- str_locate(command, "#")[1, "start"] - 1
-    if (!is.na(cmt)) command <- substr(command, 1, cmt)
+    cmt <- str_locate(commandstr, "#")[1, "start"] - 1
 
-    cat(crlf)
+    command <- commandstr
+    if (!is.na(cmt)) command <- substr(commandstr, 1, cmt)
+
+    # by now, we need to detect for loops. we will parse the sentence.
+    vargs <- shlex $ split(command)
+
+    if (vargs[1] == "for") {
+      # the loop starter.
+      for_stmt <- .for_parser $ parse_args(vargs[-1])
+      .is_control <- TRUE
+
+      iterator <- shared[[for_stmt $ iter]]
+      validiter <- is.data.frame(iterator) | is.atomic(iterator)
+      if (!validiter) {
+        cat(crayon::red("fatal: for iterator not indexable!"), crlf)
+        stop()
+      }
+
+      if (!.is_redirected) { # is not redirected for
+        # the initialization of a for loop.
+        .loop_restores <- c(.loop_restores, .current_index)
+        .loop_indices <- c(.loop_indices, 1)
+      } else .is_redirected <- FALSE
+
+      hasitem <- FALSE
+      current_loop_index <- .loop_indices |> dplyr::last()
+      if (is.data.frame(iterator)) {
+        hasitem <- nrow(iterator) >= current_loop_index
+      } else if (is.atomic(iterator)) {
+        hasitem <- length(iterator) >= current_loop_index
+      }
+
+      if (!hasitem) {
+        # exit the loop
+        .loop_restores <- .loop_restores[1 : (length(.loop_restores) - 1)]
+        .loop_indices <- .loop_indices[1 : (length(.loop_indices) - 1)]
+        .current_index <- .loop_break
+        .loop_break <- NULL
+
+      } else {
+        if (is.data.frame(iterator)) {
+          coliter <- colnames(iterator)
+          for (coli in seq_along(coliter)) {
+            shared[[paste("_", for_stmt $ ar[coli], sep = "")]] <-
+              iterator[current_loop_index, coliter[coli]]
+          }
+        } else if (is.atomic(iterator)) {
+          shared[[paste("_", for_stmt $ ar[1], sep = "")]] <-
+            iterator[current_loop_index]
+        }
+      }
+
+    } else if (vargs[1] == "endfor") {
+      .is_redirected <- TRUE
+      .is_control <- TRUE
+      .loop_break <- .current_index
+      .loop_indices[length(.loop_indices)] <-
+        .loop_indices[length(.loop_indices)] + 1
+      .current_index <- .loop_restores |> dplyr::last() - 1
+
+    } else {
+      # for running sentense, we should print it out
+      cat(crayon::green(.current_index), "") # line no.
+      cat(crayon::red("(auto) "))
+      cat(crayon::yellow(basename(getwd())))
+      cat(crayon::green(" $ "))
+
+      # now substitute the command strings.
+      varnames <- names(shared)
+      varnames <- varnames[stringr::str_starts(varnames, "_")]
+      varnames <- stringr::str_sub(varnames, 2)
+
+      for (v in varnames) {
+        commandstr <- gsub(
+          paste("\\$\\{", v, "\\}", sep = ""),
+          paste("\"", shared[[paste("_", v, sep = "")]], "\"", sep = ""),
+          commandstr
+        )
+
+        commandstr <- gsub(
+          paste("\\$\\(", v, "\\)", sep = ""),
+          shared[[paste("_", v, sep = "")]],
+          commandstr
+        )
+
+        command <- gsub(
+          paste("\\$\\{", v, "\\}", sep = ""),
+          paste("\"", shared[[paste("_", v, sep = "")]], "\"", sep = ""),
+          command
+        )
+
+        command <- gsub(
+          paste("\\$\\(", v, "\\)", sep = ""),
+          shared[[paste("_", v, sep = "")]],
+          command
+        )
+      }
+
+      cat(commandstr)
+      cat(crlf)
+    }
   }
-  cat(crlf)
+
+  # RUN -----------------------------------------------------------------------
+
+  if (main_pargs $ dry.run) {
+    .current_index <- .current_index + 1
+    if (command == "q") q()
+    else if (command == "wet") main_pargs $ dry.run <- FALSE
+    next
+  }
+
+  if (command != "" && (!.is_control)) cat(crlf)
 
   if (command == "ls") print(names(shared))
   else if (command == "gc") print(gc())
-  else if (command == "trace") traceback()
   else if (command == "q") q()
   else if (command == "wd") print(getwd())
+  else if (command == "dry") main_pargs $ dry.run <- TRUE
   else if (command == ":") cat("call system command with <:>", crlf)
   else if (stringr::str_starts(command, ":")) system(str_sub(command, 2))
 
@@ -169,12 +310,10 @@ while (TRUE) { # nolint
 
   else { # nolint
 
-    # shell split
-
-    vargs <- shlex $ split(command)
+    vargs <- shlex $ split(command) # shell split
 
     if (length(vargs) < 1) {
-      next
+      # do nothing
     } else {
 
       # extract command target
@@ -210,7 +349,7 @@ while (TRUE) { # nolint
         # proteomics
         "readp", "normp",
 
-        "source"
+        "source", "set"
 
       )) {
 
@@ -235,6 +374,8 @@ while (TRUE) { # nolint
     }
 
   }
+
+  .current_index <- .current_index + 1
 
   # here, we will update the shared status after running every command.
 
@@ -261,8 +402,8 @@ while (TRUE) { # nolint
   }
 
   if (file.exists("norm/genes-meta.rds") &&
-      file.exists("norm/samples-meta.rds") &&
-      file.exists("norm/seurat.rds")) {
+        file.exists("norm/samples-meta.rds") &&
+        file.exists("norm/seurat.rds")) {
     shared[["is_ready"]] <- TRUE
   }
 }

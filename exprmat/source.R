@@ -17,4 +17,4 @@ if (length(vargs) == 0 ||
   pargs <- parser $ parse_args(vargs)
 }
 
-cmdlist <- parse_script(pargs $ script)
+cmdlist <- c(cmdlist, parse_script(pargs $ script))
