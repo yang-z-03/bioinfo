@@ -59,7 +59,7 @@ parse_script <- function(fname) {
           substr(1, stringr::str_length(cmdlist[length(cmdlist)]) - 1),
         line |> stringr::str_trim(), sep = " "
       )
-    } else {
+    } else if (line |> stringr::str_trim() |> stringr::str_length() > 0) {
       cmdlist <- c(cmdlist, line |> stringr::str_trim())
     }
 
@@ -130,7 +130,7 @@ invoke_command <- function(src, vargs) {
 read <- function() {
   cwd <- basename(getwd())
   cat(crayon::yellow(cwd))
-  cat(crayon::green("$ "))
+  cat(crayon::green(" $ "))
   readLines("stdin", n = 1, encoding = "utf-8")
 }
 
@@ -159,6 +159,8 @@ shlex <- reticulate::import("shlex")
 
 command <- ""
 
+system("clear")
+
 while (TRUE) { # nolint
 
   if (command != "" &&
@@ -175,9 +177,11 @@ while (TRUE) { # nolint
 
   if (.current_index > .cmdlen) {
     # the script is running over. read from the input.
+    cat(crayon::green(.current_index), "") # line no.
     command <- read()
     cmdlist <- c(cmdlist, command)
     .current_index <- length(cmdlist)
+
   } else {
     # read from the cmdlist
     commandstr <- cmdlist[.current_index] |> stringr::str_trim()
@@ -244,6 +248,35 @@ while (TRUE) { # nolint
         .loop_indices[length(.loop_indices)] + 1
       .current_index <- .loop_restores |> dplyr::last() - 1
 
+    } else if (vargs[1] == "dry") {
+      .is_control <- TRUE
+    } else if (vargs[1] == "wet") {
+      .is_control <- TRUE
+    } else if (vargs[1] == "echo") {
+      .is_control <- TRUE
+      cat(crayon::green(.current_index), "") # line no.
+      # now substitute the command strings.
+      varnames <- names(shared)
+      varnames <- varnames[stringr::str_starts(varnames, "_")]
+      varnames <- stringr::str_sub(varnames, 2)
+      
+      for (v in varnames) {
+        command <- gsub(
+          paste("\\$\\{", v, "\\}", sep = ""),
+          paste("\"", shared[[paste("_", v, sep = "")]], "\"", sep = ""),
+          command
+        )
+        
+        command <- gsub(
+          paste("\\$\\(", v, "\\)", sep = ""),
+          shared[[paste("_", v, sep = "")]],
+          command
+        )
+      }
+      
+      cat(command |> stringr::str_sub(6)) # remove the echo word.
+      cat(crlf)
+      
     } else {
       # for running sentense, we should print it out
       cat(crayon::green(.current_index), "") # line no.

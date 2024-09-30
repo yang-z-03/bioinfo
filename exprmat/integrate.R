@@ -204,6 +204,7 @@ if (file.exists("norm/seurat.rds")) {
   }
 
   seurat_list <- list()
+  valid_names <- c()
   for (runname in run_names) {
     if (runname == "data") next
     if (runname == "norm") next
@@ -223,9 +224,14 @@ if (file.exists("norm/seurat.rds")) {
       #. )
       #.
       #. print(geneinfo)
-
-      seurat_list[[runname]] <- original |> seurat_raw_data_only(pargs)
-
+      
+      cellcount <- Seurat::Cells(original) |> length()
+      if (cellcount > 200) {
+        seurat_list[[runname]] <- original |> seurat_raw_data_only(pargs)
+        valid_names <- c(valid_names, runname)
+      } else {
+        cat(yellow(runname), "has fewer than 200 cells, skipped.", crlf)
+      }
       #. for (gcol in colnames(geneinfo)) {
       #.   vals <- pull(geneinfo, gcol)
       #.   names(vals) <- pull(geneinfo, "name")
@@ -241,8 +247,7 @@ if (file.exists("norm/seurat.rds")) {
     }
   }
 
-  rmv <- c("data", "norm")
-  run_names <- run_names[!(run_names %in% rmv)]
+  run_names <- valid_names
 
   # simply merge the list
 
