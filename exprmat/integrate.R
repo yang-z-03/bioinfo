@@ -139,6 +139,11 @@ parser $ add_argument(
   help = paste("variables to regress when scaling")
 )
 
+parser $ add_argument(
+  "--no-regress", dest = "noregr", action = "store_true", default = FALSE,
+  help = paste("do not perform any regression (including batch)")
+)
+
 if (length(vargs) == 0 ||
       (length(vargs) == 1 && (vargs[1] == "-h" || vargs[1] == "--help"))) {
   parser $ print_help()
@@ -291,10 +296,16 @@ merged[["RNA"]] <- split(merged[["RNA"]],
 
 if (!pargs $ nonorm) {
   if (!pargs $ sct) {
-    merged <- ScaleData(
-      merged, vars.to.regress = c(pargs $ dataset, pargs $ regr)
-    )
+    
+    if (pargs $ noregr) {
+      merged <- ScaleData(merged)
+    } else {
+      merged <- ScaleData(
+        merged, vars.to.regress = c(pargs $ dataset, pargs $ regr)
+      )
+    }
     merged <- FindVariableFeatures(merged)
+  
   } else {
     # here we do not use the variables to regress ...
     merged <- Seurat::SCTransform(merged, do.scale = TRUE, do.center = TRUE)

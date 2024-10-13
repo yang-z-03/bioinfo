@@ -77,10 +77,12 @@ cmdlist <- parse_script(main_pargs $ script)
 
 if (main_pargs $ local.lib) {
   .libPaths(c(
-    "/home/yang-z/R/bioinfo/4.4",
+    "~/R/bioinfo/4.4",
     "/usr/lib64/R/library",
     "/usr/share/R/library"
   ))
+} else {
+  .libPaths("~/miniconda/lib/R/library")
 }
 
 # global path resources
