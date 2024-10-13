@@ -72,7 +72,6 @@ genes_mask <- c()
 genes_map <- c()
 
 if (pargs $ gene == 2) {
-
   genes_chr <- genes[!genes $ mito, ]
 
   m <- match(gene_map_pivot, genes_chr $ gene)
@@ -84,8 +83,11 @@ if (pargs $ gene == 2) {
   expr_count_chr <- expr_count[genes_mask, ]
   genes_meta <- genes_chr[genes_map, ]
 
-  expr_count_chr <- expr_count_chr[!duplicated(genes_meta $ entrez), ]
-  genes_meta <- genes_meta[!duplicated(genes_meta $ entrez), ]
+  # well, entrez contain many NA's, this step will lose too much information
+  # and genes! -- found during processing tcr-delta data.
+  
+  # expr_count_chr <- expr_count_chr[!duplicated(genes_meta $ entrez), ]
+  # genes_meta <- genes_meta[!duplicated(genes_meta $ entrez), ]
 
   # process mitochondrial genes separately
 
