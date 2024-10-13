@@ -1,0 +1,3 @@
+
+  cellranger use this reference annotation by default.
+  you'd better use these when processing 10x-generated data.

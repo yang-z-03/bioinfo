@@ -1,6 +1,6 @@
 
-                            cell type references
-                            ====================
+                              cell type references
+                              ====================
 
 this directory contains a number of processed cell type references. either in
 summarized experiment rds (for bulk rna-seq) or in single cell experiment (sce)
@@ -541,3 +541,114 @@ package for convenient and local cell type annotation.
 
     2.1     hca (human cell landscape)
     ----------------------------------
+
+    see <db.cngb.org/HCL> for more details.
+
+    we used single-cell rna sequencing to determine the cell type composition
+    of major human organs and construct a basic scheme for the human cell
+    landscape (hcl). to allow for public access of the resource, we created
+    a human cell landscape (hcl) website at http://bis.zju.edu.cn/hcl/ (with a
+    mirror website for international users at https://db.cngb.org/hcl/). 
+
+    we analysed >700,000 single cells from >50 human tissues (2-4 replicates
+    per tissue in general) and cultures. in a global view, the complete human
+    tissue dataset are grouped into 102 major clusters
+
+         [1] "Macrophage"                                              
+         [2] "Monocyte"                                                
+         [3] "Stromal cell"                                            
+         [4] "Smooth muscle cell"                                      
+         [5] "Dendritic cell"                                          
+         [6] "B cell (Plasmocyte)"                                     
+         [7] "Erythroid cell"                                          
+         [8] "T cell"                                                  
+         [9] "Endothelial cell (APC)"                                  
+        [10] "Fibroblast"                                              
+        [11] "Epithelial cell"                                         
+        [12] "Endothelial cell (endothelial to mesenchymal transition)"
+        [13] "Mast cell"                                               
+        [14] "Neutrophil"                                              
+        [15] "Fasciculata cell"                                        
+        [16] "Myeloid cell"                                            
+        [17] "Kidney intercalated cell"                                
+        [18] "Sinusoidal endothelial cell"                             
+        [19] "B cell"                                                  
+        [20] "M2 Macrophage"                                           
+        [21] "Endothelial cell"                                        
+        [22] "Fetal Neuron"                                            
+        [23] "Fetal stromal cell"                                      
+        [24] "Mesothelial cell"                                        
+        [25] "Basal cell"                                              
+        [26] "Enterocyte progenitor"                                   
+        [27] "Antigen presenting cell (RPS high)"                      
+        [28] "Fetal mesenchymal progenitor"                            
+        [29] "Epithelial cell (intermediated)"                         
+        [30] "Intermediated cell"                                      
+        [31] "Gastric endocrine cell"                                  
+        [32] "Fetal fibroblast"                                        
+        [33] "Erythroid progenitor cell (RP high)"                     
+        [34] "Neutrophil (RPS high)"                                   
+        [35] "CB CD34+"                                                
+        [36] "Primordial germ cell"                                    
+        [37] "Oligodendrocyte"                                         
+        [38] "Astrocyte"                                               
+        [39] "Fetal neuron"                                            
+        [40] "Fetal enterocyte "                                       
+        [41] "Goblet cell"                                             
+        [42] "Fetal epithelial progenitor"                             
+        [43] "Stratified epithelial cell"                              
+        [44] "Loop of Henle"                                           
+        [45] "Enterocyte"                                              
+        [46] "Fetal endocrine cell"                                    
+        [47] "Hepatocyte/Endodermal cell"                              
+        [48] "Ventricle cardiomyocyte"                                 
+        [49] "Proliferating T cell"                                    
+        [50] "Intercalated cell"                                       
+        [51] "Ureteric bud cell"                                       
+        [52] "hESC"                                                    
+        [53] "Proximal tubule progenitor"                              
+        [54] "Pancreas exocrine cell"                                  
+        [55] "AT2 cell"                                                
+        [56] "Chondrocyte"                                             
+        [57] "Fetal chondrocyte"                                       
+        [58] "Fetal skeletal muscle cell"                              
+        [59] "Fetal acinar cell"                                       
+        [60] "Gastric chief cell"                                      
+        [61] "Thyroid follicular cell"                                 
+        [62] "Immature sertoli cell (Pre-Sertoli cell)"                
+        [63] "Adrenal gland inflammatory cell"
+
+
+                             other cell markers
+                             ==================
+
+here are some brief introduction to other individual files, containing cell
+markers collected from several databases, for programmatic usage or manual
+searchings. here are a list of files:
+
+hsa-house-keeping:
+    
+    <https://www.tau.ac.il/~elieis/HKG/HK_genes.txt>
+    record a list of *human* house-keeping genes, you may choose several (~1000)
+    of these genes to normalize your expression matrix.
+
+cell-markers-all:
+hsa-markers:
+mmu-markers:
+
+    <http://xteam.xbio.top/CellMarker/download/all_cell_markers.txt>
+    <http://xteam.xbio.top/CellMarker/download/Human_cell_markers.txt>
+    <http://xteam.xbio.top/CellMarker/download/Mouse_cell_markers.txt>
+    a full marker list extracted from the cell-marker project.
+    and sub-tables for each species are also available.
+
+single-cell-markers:
+
+    <http://xteam.xbio.top/CellMarker/download/Single_cell_markers.txt>
+    markers gained from single cell expression researches.
+
+cell-taxonomy:
+
+    taxonomy and ontology of cell types. (extremely large, and comprehensive).
+    with publications, common database index, CL and CT numbers.
+    suitable with programmatic usage.
