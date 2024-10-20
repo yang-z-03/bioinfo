@@ -1,0 +1,34 @@
+    
+    the column format is the same as the gene_group file.  in this 
+    file, the relationship column value is always "ortholog".
+
+    this file does not report relationships symmetrically.  instead,
+    a primary organism/gene is identified for each ortholog, and is
+    represented in the first two columns.  all other orthologous
+    organisms/genes are represented in the last two columns.  thus,
+    each record in the file represents a pair of orthologous genes.
+    if there are n orthologous genes in a group, then there will be
+    n-1 records (pairs) represented in the gene_orthologs file.
+
+    ortholog gene groups are calculated by ncbi's eukaryotic genome
+    annotation pipeline for the ncbi gene dataset using a combination
+    of protein sequence similarity and local synteny information.
+    orthologous gene relationships may additionally be assigned after
+    manual review by a refseq genome curator. orthology is determined
+    between a genome being annotated and a reference genome, typically
+    human, and the set of pairwise orthologs are tracked as a group.
+
+    for fish other than zebrafish, orthologs are computed in a
+    two-layer process. 1:1 orthologs are computed vs zebrafish, and
+    zebrafish orthologs are computed vs human. if the fish gene has a
+    zebrafish ortholog that has a human ortholog, then the fish gene
+    is combined into the human ortholog group and reported vs the human
+    gene. otherwise it is reported vs the zebrafish gene. to determine
+    all fish:zebrafish orthologs for a given tax_id, join the data to
+    find the fish:human:zebrafish and fish:zebrafish data.
+
+
+    get the file at:
+
+    <https://ftp.ncbi.nih.gov/gene/DATA/gene_orthologs.gz>
+    <https://ftp.ncbi.nih.gov/gene/DATA/gene_info.gz>

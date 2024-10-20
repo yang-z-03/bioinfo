@@ -6,13 +6,13 @@ from cellphonedb.src.core.methods import cpdb_statistical_analysis_method
 cpdb_version = 'v5'
 
 # path where the input files to generate the database are located
-cpdb_target_dir = '/home/yang-z/bioinfo/cpdb/cellphonedb.zip'
+cpdb_target_dir = '~/bioinfo/cpdb/cellphonedb.zip'
 
 # check the input files
 import anndata
 
 adata = anndata.read_h5ad(
-    '/home/yang-z/bioinfo/geo/GSE98638/cpdb/norm-counts.h5ad'
+    '~/bioinfo/geo/GSE98638/cpdb/norm-counts.h5ad'
 )
 
 shape = adata.shape

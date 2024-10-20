@@ -1,0 +1,108 @@
+#!/usr/bin/env Rscript
+
+.libPaths(c(
+  "~/R/bioinfo/4.4",
+  "/usr/lib64/R/library",
+  "/usr/share/R/library"
+))
+
+suppressPackageStartupMessages(
+  require(tibble)
+)
+
+parser <- argparse::ArgumentParser(
+  prog = "qortho",
+  description = "query mgi homologs between human and mice"
+)
+
+parser $ add_argument(
+  "gene", type = "character", nargs = "+",
+  help = "input list of genes"
+)
+
+parser $ add_argument(
+  "-m", dest = "mice", default = FALSE, action = "store_true",
+  help = "query mice genes, but not human (by default)"
+)
+
+parser $ add_argument(
+  "-r", dest = "regex", default = FALSE, action = "store_true",
+  help = "query by regex, but not exact match (always ignoring cases)"
+)
+
+pargs <- parser $ parse_args()
+
+if (! file.exists("mgi-human.rds")) {
+  convtable <- read.table(
+    "mgi-human.tsv", header = TRUE,
+    sep = "\t", comment.char = "#", quote = "\"", fill = TRUE
+  )
+
+  colnames(convtable) <- c(
+    "key", "tax.name", "tax", "symbol",
+    "entrez", "mgi", "hgnc", "omim", "loc", "coords",
+    "refseqn", "refseqp", "swissprot"
+  )
+  saveRDS(convtable, "mgi-human.rds")
+} else convtable <- readRDS("mgi-human.rds")
+
+human <- convtable[convtable $ tax == 9606, ]
+mice <- convtable[convtable $ tax == 10090, ]
+
+regexes <- c()
+if (pargs $ regex) {
+  regexes <- pargs $ gene
+} else {
+  regexes <- paste("^", pargs $ gene, "$", sep = "")
+}
+
+if (pargs $ mice) {
+
+  # the genes entered are mice genes (ignoring cases)
+
+  m <- c()
+  for (g in regexes) {
+    matches <- grep(g, mice $ symbol, ignore.case = TRUE)
+    m <- c(m, matches)
+  }
+
+  all_matches <- NULL
+  query <- c()
+  for (id in m) {
+    key <- mice $ key[id]
+    human_match <- human[human $ key == key, ]
+    query <- c(query, rep(mice $ symbol[id], nrow(human_match)))
+    if (all_matches |> is.null()) all_matches <- human_match
+    else all_matches <- rbind(all_matches, human_match)
+  }
+
+  out <- tibble(all_matches)
+
+} else {
+
+  # entering human gene names
+
+  m <- c()
+  for (g in regexes) {
+    matches <- grep(g, human $ symbol, ignore.case = TRUE)
+    m <- c(m, matches)
+  }
+
+  all_matches <- NULL
+  query <- c()
+  for (id in m) {
+    key <- human $ key[id]
+    mice_match <- mice[mice $ key == key, ]
+    query <- c(query, rep(human $ symbol[id], nrow(mice_match)))
+    if (all_matches |> is.null()) all_matches <- mice_match
+    else all_matches <- rbind(all_matches, mice_match)
+  }
+
+  out <- tibble(all_matches)
+}
+
+if (nrow(out) > 0) {
+  out $ query <- query
+  out[, c("query", "key", "tax", "symbol", "mgi", "hgnc")] |>
+    print(n = nrow(out))
+}

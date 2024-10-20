@@ -1,0 +1,145 @@
+#!/usr/bin/env Rscript
+
+.libPaths(c(
+  "~/R/bioinfo/4.4",
+  "/usr/lib64/R/library",
+  "/usr/share/R/library"
+))
+
+suppressPackageStartupMessages({
+  require(tibble)
+  require(dplyr)
+})
+
+parser <- argparse::ArgumentParser(
+  prog = "qorthoi",
+  description = "query ncbi homologs (interactive)"
+)
+
+parser $ add_argument(
+  "-s", dest = "species", default = 9606, type = "integer",
+  help = "the species the querying genes come from, by default homo sapiens"
+)
+
+parser $ add_argument(
+  "-t", dest = "target", default = 10090, type = "integer",
+  help = "destination species, by default mus musculus"
+)
+
+parser $ add_argument(
+  "-r", dest = "regex", default = FALSE, action = "store_true",
+  help = "query by regex, but not exact match (always ignoring cases)"
+)
+
+pargs <- parser $ parse_args()
+
+if (! file.exists("orthologs.rds")) {
+  convtable <- read.table(
+    "orthologs.gz", header = FALSE,
+    sep = "\t", comment.char = "#", quote = "\"", fill = TRUE
+  )
+
+  colnames(convtable) <- c(
+    "tax1", "entrez1", "relation", "tax2", "entrez2"
+  )
+  saveRDS(convtable, "orthologs.rds")
+} else convtable <- readRDS("orthologs.rds")
+
+querydb <- paste("genes/", pargs $ species, ".rds", sep = "")
+querydb <- readRDS(querydb)
+targetdb <- paste("genes/", pargs $ target, ".rds", sep = "")
+targetdb <- readRDS(targetdb)
+
+# convert the input genes (we allow user to input the accepted gene name, or any
+# of its aliases. if the alias is duplicate, we will return all duplicated
+# records, since this is what the program for)
+
+# we will build a index for entrez id and symbol (as well as synonyms) for each
+# species we meet as query species. commonly human and mice.
+
+if (! file.exists(paste("synonyms/", pargs $ species, ".rds", sep = ""))) {
+  avail <- paste(querydb $ symbol, querydb $ synonyms, sep = "|")
+  lssyn <- stringr::str_split(avail, "\\|")
+  lengths <- lapply(lssyn, length) |> unlist()
+  mapkeys <- purrr::map2(querydb $ entrez, lengths, rep) |> unlist()
+  alias <- lssyn |> unlist()
+  synonyms <- data.frame(entrez = mapkeys, alias = alias)
+  saveRDS(synonyms, paste("synonyms/", pargs $ species, ".rds", sep = ""))
+} else {
+  synonyms <- readRDS(paste("synonyms/", pargs $ species, ".rds", sep = ""))
+}
+
+read <- function() {
+  cat(crayon::green("$ "))
+  readLines("stdin", n = 1, encoding = "utf-8")
+}
+
+while (TRUE) {
+
+  pargs $ gene <- stringr::str_split(read(), " ")
+
+  regexes <- c()
+  if (pargs $ regex) {
+    regexes <- pargs $ gene
+  } else {
+    regexes <- paste("^", pargs $ gene, "$", sep = "")
+  }
+
+  m <- c()
+  for (g in regexes) {
+    matches <- grep(g, synonyms $ alias, ignore.case = TRUE)
+    m <- c(m, matches)
+  }
+
+  entrezids <- synonyms[m, ]
+  entrezids <- entrezids[!duplicated(entrezids $ entrez), ]
+
+  # the entrezids to be queried may rest in either entrez1 or entrez2.
+  # look for convtable to find them.
+
+  all_matches <- NULL
+
+  for (id in entrezids $ entrez) {
+    key <- convtable[convtable $ entrez1 == id, ]
+    key <- key[key $ tax2 == pargs $ target, ]
+    key2 <- convtable[convtable $ entrez2 == id, ]
+    key2 <- key2[key2 $ tax1 == pargs $ target, ]
+    key2 <- data.frame(
+      tax1 = key2 $ tax2,
+      entrez1 = key2 $ entrez2,
+      relation = key2 $ relation,
+      tax2 = key2 $ tax1,
+      entrez2 = key2 $ entrez1
+    )
+
+    key <- rbind(key, key2) |> tibble()
+    key <- key[!duplicated(key), ]
+
+    queryinfo <- match(id, querydb $ entrez)
+    orthoinfo <- match(key $ entrez2, targetdb $ entrez)
+    flag <- !is.na(orthoinfo)
+    orthoinfo <- orthoinfo[flag]
+    key <- key[flag, ]
+
+    df <- data.frame(
+      query = rep(querydb $ symbol[queryinfo], length(orthoinfo)),
+      match = rep(
+        entrezids[entrezids $ entrez == id, ] $ alias[1],
+        length(orthoinfo)
+      ),
+      qid = rep(id, length(orthoinfo)),
+      qorg = key $ tax1,
+      ortholog = targetdb[orthoinfo, ] $ symbol,
+      tid = targetdb[orthoinfo, ] $ entrez,
+      torg = key $ tax2
+    )
+
+    if (all_matches |> is.null()) all_matches <- df
+    else all_matches <- rbind(all_matches, df)
+  }
+
+  out <- tibble(all_matches)
+
+  if (nrow(out) > 0) print(out, n = nrow(out))
+
+}

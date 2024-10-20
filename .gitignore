@@ -63,6 +63,10 @@ ctref/*/*
 ucsc/*
 !ucsc/readme
 
+homology/*/*.rds
+homology/*/*/*.rds
+homology/*/*.gz
+
 # msigdb/
 # !msigdb/readme
 
