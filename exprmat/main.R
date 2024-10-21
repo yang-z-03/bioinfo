@@ -372,7 +372,7 @@ while (TRUE) { # nolint
 
         # advanced single-cell dataset manipulation
         "dimreduc", "cluster", "annot", "run", "de", "lsclust", "rnclust",
-        "cpsclust", "defclust", "addclust", "cpdbin",
+        "cpsclust", "defclust", "addclust", "cpdbin", "cpdbhom",
 
         # programming language
         "view", "clear", "table",
