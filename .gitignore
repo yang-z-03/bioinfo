@@ -67,6 +67,8 @@ homology/*/*.rds
 homology/*/*/*.rds
 homology/*/*.gz
 
+sam/test
+
 # msigdb/
 # !msigdb/readme
 
