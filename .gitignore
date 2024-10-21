@@ -57,7 +57,11 @@ gencode/9606/*
 
 analyses
 
-ctref
+ctref/*
+!ctref/readme
+
+ucsc/*
+!ucsc/readme
 
 # msigdb/
 # !msigdb/readme

@@ -1,0 +1,543 @@
+
+                            cell type references
+                            ====================
+
+this directory contains a number of processed cell type references. either in
+summarized experiment rds (for bulk rna-seq) or in single cell experiment (sce)
+rds format (for single cell rna-seq). which can be directly used by the singler
+package for convenient and local cell type annotation.
+
+
+                                mus musculus
+                                ============
+
+1   bulk rna references
+-----------------------
+
+    1.1     immgen
+    --------------
+
+    *   immune cells
+
+    the immgen reference consists of microarray profiles of pure mouse immune
+    cells from the project of the same name (heng et al. 2008). this is
+    currently the most highly resolved immune reference - possibly overwhelmingly
+    so, given the granularity of the fine labels.
+
+          [1] "Macrophages (MF.11C-11B+)"             
+          [2] "Macrophages (MF.ALV)"                  
+          [3] "Monocytes (MO.6+I-)"                   
+          [4] "Monocytes (MO.6+2+)"                   
+          [5] "B cells (B.MEM)"                       
+          [6] "B cells (B1A)"                         
+          [7] "DC (DC.11B+)"                          
+          [8] "DC (DC.11B-)"                          
+          [9] "Stromal cells (DN.CFA)"                
+         [10] "Stromal cells (DN)"                    
+         [11] "Eosinophils (EO)"                      
+         [12] "Fibroblasts (FRC.CAD11.WT)"            
+         [13] "Fibroblasts (FRC.CFA)"                 
+         [14] "Fibroblasts (FRC)"                     
+         [15] "Neutrophils (GN)"                      
+         [16] "Endothelial cells (LEC.CFA)"           
+         [17] "Endothelial cells (LEC)"               
+         [18] "Macrophages (MF)"                      
+         [19] "T cells (T.DP.69-)"                    
+         [20] "T cells (T.DP)"                        
+         [21] "T cells (T.DP69+)"                     
+         [22] "Macrophages (MF.F480HI.GATA6KO)"       
+         [23] "Macrophages (MF.F480HI.CTRL)"          
+         [24] "T cells (T.CD4.1H)"                    
+         [25] "T cells (T.CD4.24H)"                   
+         [26] "T cells (T.CD4.48H)"                   
+         [27] "T cells (T.CD4.5H)"                    
+         [28] "T cells (T.CD4.96H)"                   
+         [29] "T cells (T.CD4.CTR)"                   
+         [30] "T cells (T.CD8.1H)"                    
+         [31] "T cells (T.CD8.24H)"                   
+         [32] "T cells (T.CD8.48H)"                   
+         [33] "T cells (T.CD8.5H)"                    
+         [34] "T cells (T.CD8.96H)"                   
+         [35] "T cells (T.CD8.CTR)"                   
+         [36] "Macrophages (MFAR-)"                   
+         [37] "Monocytes (MO)"                        
+         [38] "ILC (ILC1.CD127+)"                     
+         [39] "ILC (LIV.ILC1.DX5-)"                   
+         [40] "ILC (LPL.NCR+ILC1)"                    
+         [41] "ILC (ILC2)"                            
+         [42] "ILC (LPL.NCR+ILC3)"                    
+         [43] "ILC (ILC3.LTI.CD4+)"                   
+         [44] "ILC (ILC3.LTI.CD4-)"                   
+         [45] "ILC (ILC3.LTI.4+)"                     
+         [46] "NK cells (NK.CD127-)"                  
+         [47] "ILC (LIV.NK.DX5+)"                     
+         [48] "ILC (LPL.NCR+CNK)"                     
+         [49] "Basophils (BA)"                        
+         [50] "Epithelial cells (Ep.5wk.MEC.Sca1+)"   
+         [51] "Epithelial cells (Ep.5wk.MEChi)"       
+         [52] "Epithelial cells (Ep.5wk.MEClo)"       
+         [53] "Epithelial cells (Ep.8wk.CEC.Sca1+)"   
+         [54] "Epithelial cells (Ep.8wk.CEChi)"       
+         [55] "Epithelial cells (Ep.8wk.MEChi)"       
+         [56] "Epithelial cells (Ep.8wk.MEClo)"       
+         [57] "Mast cells (MC.ES)"                    
+         [58] "Mast cells (MC)"                       
+         [59] "Mast cells (MC.TO)"                    
+         [60] "Mast cells (MC.TR)"                    
+         [61] "Mast cells (MC.DIGEST)"                
+         [62] "Epithelial cells (MECHI.GFP+.ADULT)"   
+         [63] "Epithelial cells (MECHI.GFP+.ADULT.KO)"
+         [64] "Epithelial cells (MECHI.GFP-.ADULT)"   
+         [65] "Macrophages (MF.480HI.NAIVE)"          
+         [66] "Macrophages (MF.480INT.NAIVE)"         
+         [67] "T cells (T.4EFF49D+11A+.D8.LCMV)"      
+         [68] "T cells (T.4MEM49D+11A+.D30.LCMV)"     
+         [69] "T cells (T.4NVE44-49D-11A-)"           
+         [70] "T cells (T.8EFF.TBET+.OT1LISOVA)"      
+         [71] "T cells (T.8EFF.TBET-.OT1LISOVA)"      
+         [72] "T cells (T.8EFFKLRG1+CD127-.D8.LISOVA)"
+         [73] "T cells (T.8MEMKLRG1-CD127+.D8.LISOVA)"
+         [74] "T cells (T.4+8int)"                    
+         [75] "T cells (T.4FP3+25+)"                  
+         [76] "T cells (T.4int8+)"                    
+         [77] "T cells (T.4SP24-)"                    
+         [78] "T cells (T.4SP24int)"                  
+         [79] "T cells (T.4SP69+)"                    
+         [80] "T cells (T.8SP24-)"                    
+         [81] "T cells (T.8SP24int)"                  
+         [82] "T cells (T.8SP69+)"                    
+         [83] "T cells (T.DPbl)"                      
+         [84] "T cells (T.DPsm)"                      
+         [85] "T cells (T.ISP)"                       
+         [86] "B cells (B.FrE)"                       
+         [87] "B cells (B.FrF)"                       
+         [88] "B cells (preB.FrD)"                    
+         [89] "B cells (proB.FrBC)"                   
+         [90] "B cells (preB.FrC)"                    
+         [91] "Stem cells (SC.STSL)"                  
+         [92] "T cells (T.CD4+TESTNA)"                
+         [93] "T cells (T.CD4+TESTDB)"                
+         [94] "B cells (B.CD19CONTROL)"               
+         [95] "T cells (T.CD4CONTROL)"                
+         [96] "T cells (T.CD4TESTJS)"                 
+         [97] "T cells (T.CD4TESTCJ)"                 
+         [98] "Stem cells (SC.CD150-CD48-)"           
+         [99] "Tgd (Tgd.imm.vg2+)"                    
+        [100] "Tgd (Tgd.imm.vg2)"                     
+        [101] "Tgd (Tgd.mat.vg3)"                     
+        [102] "Tgd (Tgd.mat.vg3.)"                    
+        [103] "Tgd (Tgd)"                             
+        [104] "Tgd (Tgd.vg2+.act)"                    
+        [105] "Tgd (Tgd.vg2-.act)"                    
+        [106] "Tgd (Tgd.vg2-)"                        
+        [107] "B cells (B.Fo)"                        
+        [108] "B cells (B.FRE)"                       
+        [109] "B cells (B.GC)"                        
+        [110] "B cells (B.MZ)"                        
+        [111] "B cells (B.T1)"                        
+        [112] "B cells (B.T2)"                        
+        [113] "B cells (B.T3)"                        
+        [114] "B cells (B1a)"                         
+        [115] "B cells (B1b)"                         
+        [116] "DC (DC)"                               
+        [117] "DC (DC.103+11B-)"                      
+        [118] "DC (DC.8-4-11B+)"                      
+        [119] "DC (DC.LC)"                            
+        [120] "NK cells (NK.49CI+)"                   
+        [121] "NK cells (NK.49CI-)"                   
+        [122] "NK cells (NK.B2M-)"                    
+        [123] "NK cells (NK.DAP10-)"                  
+        [124] "NK cells (NK.DAP12-)"                  
+        [125] "NK cells (NK.H+.MCMV1)"                
+        [126] "NK cells (NK.H+.MCMV7)"                
+        [127] "NK cells (NK.H+MCMV1)"                 
+        [128] "NK cells (NK.MCMV7)"                   
+        [129] "NK cells (NK)"                         
+        [130] "NKT (NKT.4+)"                          
+        [131] "NKT (NKT.4-)"                          
+        [132] "NKT (NKT.44+NK1.1+)"                   
+        [133] "NKT (NKT.44+NK1.1-)"                   
+        [134] "NKT (NKT.44-NK1.1-)"                   
+        [135] "B cells (preB.FRD)"                    
+        [136] "B cells (proB.CLP)"                    
+        [137] "Stem cells (proB.CLP)"                 
+        [138] "B cells (proB.FrA)"                    
+        [139] "B cells (proB.FRA)"                    
+        [140] "B cells, pro (proB.FrA)"               
+        [141] "T cells (T.4MEM)"                      
+        [142] "T cells (T.4Mem)"                      
+        [143] "T cells (T.4MEM44H62L)"                
+        [144] "T cells (T.4Nve)"                      
+        [145] "T cells (T.4NVE)"                      
+        [146] "T cells (T.8EFF.OT1.D15.VSVOVA)"       
+        [147] "T cells (T.8EFF.OT1.D5.VSVOVA)"        
+        [148] "T cells (T.8EFF.OT1.VSVOVA)"           
+        [149] "T cells (T.8EFF.OT1.D8.VSVOVA)"        
+        [150] "T cells (T.8MEM)"                      
+        [151] "T cells (T.8Mem)"                      
+        [152] "T cells (T.8MEM.OT1.D106.VSVOVA)"      
+        [153] "T cells (T.8EFF.OT1.D45VSV)"           
+        [154] "T cells (T.8Nve)"                      
+        [155] "T cells (T.8NVE)"                      
+        [156] "B cells (proB.FRBC)"                   
+        [157] "T cells (T.4)"                         
+        [158] "T cells (T.4.Pa)"                      
+        [159] "T cells (T.4.PLN)"                     
+        [160] "T cells (T.4FP3-)"                     
+        [161] "Tgd (Tgd.VG2+)"                        
+        [162] "Tgd (Tgd.vg2+.TCRbko)"                 
+        [163] "Tgd (Tgd.vg2-.TCRbko)"                 
+        [164] "Tgd (Tgd.vg5+.act)"                    
+        [165] "Tgd (Tgd.VG5+.ACT)"                    
+        [166] "Tgd (Tgd.VG5+)"                        
+        [167] "Tgd (Tgd.vg5-.act)"                    
+        [168] "Tgd (Tgd.VG5-)"                        
+        [169] "NK cells (NK.49H+)"                    
+        [170] "NK cells (NK.49H-)"                    
+        [171] "DC (DC.8+)"                            
+        [172] "DC (DC.8-)"                            
+        [173] "DC (DC.8-4-11B-)"                      
+        [174] "DC (DC.PDC.8+)"                        
+        [175] "DC (DC.PDC.8-)"                        
+        [176] "Macrophages (MF.II-480HI)"             
+        [177] "Macrophages (MF.RP)"                   
+        [178] "Macrophages (MFIO5.II+480INT)"         
+        [179] "Macrophages (MFIO5.II+480LO)"          
+        [180] "Macrophages (MFIO5.II-480HI)"          
+        [181] "Macrophages (MFIO5.II-480INT)"         
+        [182] "Monocytes (MO.6C+II+)"                 
+        [183] "Monocytes (MO.6C+II-)"                 
+        [184] "Monocytes (MO.6C-II+)"                 
+        [185] "Monocytes (MO.6C-II-)"                 
+        [186] "Monocytes (MO.6C-IIINT)"               
+        [187] "T cells (T.8EFF.OT1.D10LIS)"           
+        [188] "T cells (T.8EFF.OT1.D10.LISOVA)"       
+        [189] "T cells (T.8EFF.OT1.D15LIS)"           
+        [190] "T cells (T.8EFF.OT1.D15.LISOVA)"       
+        [191] "T cells (T.8EFF.OT1LISO)"              
+        [192] "T cells (T.8EFF.OT1.LISOVA)"           
+        [193] "T cells (T.8EFF.OT1.D8LISO)"           
+        [194] "T cells (T.8EFF.OT1.D8.LISOVA)"        
+        [195] "T cells (T.8MEM.OT1.D100.LISOVA)"      
+        [196] "T cells (T.8MEM.OT1.D45.LISOVA)"       
+        [197] "T cells (T.8NVE.OT1)"                  
+        [198] "B cells (B.FO)"                        
+        [199] "Endothelial cells (BEC)"               
+        [200] "Epithelial cells (EP.MECHI)"           
+        [201] "Fibroblasts (FI.MTS15+)"               
+        [202] "Fibroblasts (FI)"                      
+        [203] "Stromal cells (ST.31-38-44-)"          
+        [204] "Stem cells (SC.LT34F)"                 
+        [205] "Stem cells (SC.MDP)"                   
+        [206] "Stem cells (SC.MEP)"                   
+        [207] "Stem cells (SC.MPP34F)"                
+        [208] "Stem cells (SC.ST34F)"                 
+        [209] "Stem cells (SC.CDP)"                   
+        [210] "Stem cells (SC.CMP.DR)"                
+        [211] "Stem cells (GMP)"                      
+        [212] "Stem cells (MLP)"                      
+        [213] "Stem cells (LTHSC)"                    
+        [214] "T cells (T.DN2-3)"                     
+        [215] "T cells (T.DN2)"                       
+        [216] "T cells (T.DN2A)"                      
+        [217] "T cells (T.DN2B)"                      
+        [218] "T cells (T.DN3-4)"                     
+        [219] "T cells (T.DN3A)"                      
+        [220] "T cells (T.DN3B)"                      
+        [221] "T cells (T.DN1-2)"                     
+        [222] "T cells (T.DN4)"                       
+        [223] "Macrophages (MF.103-11B+.SALM3)"       
+        [224] "Macrophages (MF.103-11B+)"             
+        [225] "DC (DC.103-11B+24+)"                   
+        [226] "Macrophages (MF.103-11B+24-)"          
+        [227] "DC (DC.103-11B+F4-80LO.KD)"            
+        [228] "Macrophages (MF.11CLOSER.SALM3)"       
+        [229] "Macrophages (MF.11CLOSER)"             
+        [230] "Macrophages (MF.103CLOSER)"            
+        [231] "Macrophages (MF.II+480LO)"             
+        [232] "Neutrophils (GN.ARTH)"                 
+        [233] "Neutrophils (GN.Thio)"                 
+        [234] "Neutrophils (GN.URAC)"                 
+        [235] "Macrophages (MF.169+11CHI)"            
+        [236] "Macrophages (MF.MEDL)"                 
+        [237] "Macrophages (MF.SBCAPS)"               
+        [238] "Microglia (Microglia)"                 
+        [239] "T cells (T.ETP)"                       
+        [240] "Tgd (Tgd.imm.VG1+)"                    
+        [241] "Tgd (Tgd.imm.VG1+VD6+)"                
+        [242] "Tgd (Tgd.mat.VG1+)"                    
+        [243] "Tgd (Tgd.mat.VG1+VD6+)"                
+        [244] "Tgd (Tgd.mat.VG2+)"                    
+        [245] "Tgd (Tgd.VG3+24AHI)"                   
+        [246] "Tgd (Tgd.VG5+24AHI)"                   
+        [247] "T cells (T.8EFF.OT1.12HR.LISOVA)"      
+        [248] "T cells (T.8EFF.OT1.24HR.LISOVA)"      
+        [249] "T cells (T.8EFF.OT1.48HR.LISOVA)"      
+        [250] "T cells (T.Tregs)"                     
+        [251] "Tgd (Tgd.VG2+24AHI)"                   
+        [252] "Tgd (Tgd.VG4+24AHI)"                   
+        [253] "Tgd (Tgd.VG4+24ALO)"
+    
+    with coarse labels:
+
+         [1] "Macrophages"       "Monocytes"         "B cells"          
+         [4] "DC"                "Stromal cells"     "Eosinophils"      
+         [7] "Fibroblasts"       "Neutrophils"       "Endothelial cells"
+        [10] "T cells"           "ILC"               "NK cells"         
+        [13] "Basophils"         "Epithelial cells"  "Mast cells"       
+        [16] "Stem cells"        "Tgd"               "NKT"              
+        [19] "B cells, pro"      "Microglia"
+
+
+2   single cell references
+--------------------------
+
+    2.1     mca (mouse cell atlas)
+    ------------------------------
+
+    *   pan-tissue
+
+    single-cell rna sequencing to determine the cell type composition of major
+    mouse organs and construct a basic scheme for the mouse cell atlas (mca).
+
+    in mca 1.0, we analysed >400,000 single cells from >10 mouse tissues (2-4
+    replicates per tissue in general). in a global view of mca 1.1, the complete
+    mouse tissue dataset are grouped into 104 major clusters. in mca 2.0 (mouse
+    cell differentiation atlas), we analysed >520,000 single cells from >10
+    mouse tissues (2-4 replicates per tissue in general) at seven life stages
+    (e10.5, e12.5, e14.5, p0, p10, p21, adult) from early embryonic stage to
+    the mature adult stage. in a global view, the complete mouse tissue dataset
+    are grouped into 95 major clusters. in mca 3.0 (mouse cell development and
+    ageing atlas), we analysed ~1,130,000 single cells from >10 mouse tissues
+    (2-4 replicates per tissue in general) at ten life stages (e10.5, e12.5,
+    e14.5, neonatal, 10d, 3w, 6~8w, 12m, 18m, 24m) from early embryonic stage
+    to the mature adult stage. in a global view, the complete mouse tissue
+    dataset are grouped into 177 major clusters.we created this page to achieve
+    better visualization for global view. you can view each group, each tissue
+    and each gene by choosing the optional box on the left. atlas view provides
+    global view on single cell level, marker list provides marker genes for
+    each cluster. 
+
+         [1] "Leydig cell"                          
+         [2] "Macrophage"                           
+         [3] "Monocyte"                             
+         [4] "Fibroblast"                           
+         [5] "Plasma cell"                          
+         [6] "Dendritic cell"                       
+         [7] "T cell"                               
+         [8] "Smooth muscle cell"                   
+         [9] "Enteroendocrine cell"                 
+        [10] "Endothelial cell"                     
+        [11] "Sertoli cell"                         
+        [12] "B cell"                               
+        [13] "Erythroid cell"                       
+        [14] "Mast cell"                            
+        [15] "Oligodendrocyte"                      
+        [16] "Myocyte"                              
+        [17] "Neural progenitor cell"               
+        [18] "Neutrophil"                           
+        [19] "Adipocyte cell"                       
+        [20] "Gastric epithelial cell"              
+        [21] "Microglia"                            
+        [22] "Epithelial cell"                      
+        [23] "Astrocyte"                            
+        [24] "Mesenchymal cell"                     
+        [25] "Prostatic luminal cell"               
+        [26] "Striated muscle cell"                 
+        [27] "Spermatogonia"                        
+        [28] "Basal cell"                           
+        [29] "Unknown"                              
+        [30] "Secretory alveoli cell"               
+        [31] "Ependymal cell"                       
+        [32] "Glia"                                 
+        [33] "Cardiomyocyte"                        
+        [34] "Proliferating cell"                   
+        [35] "Renal epithelial cell"                
+        [36] "Chondrocyte"                          
+        [37] "Erythroblast"                         
+        [38] "Megakaryocyte"                        
+        [39] "Paneth cell"                          
+        [40] "Goblet cell"                          
+        [41] "Enterocyte"                           
+        [42] "Proximal tubule cell"                 
+        [43] "Intercalated cells of collecting duct"
+        [44] "Ascending loop of Henle"              
+        [45] "Connecting tubule cell"               
+        [46] "Distal convoluted tubule"             
+        [47] "Hepatocyte"                           
+        [48] "Club cell"                            
+        [49] "AT2 cell"                             
+        [50] "Ciliated cell"                        
+        [51] "AT1 cell"                             
+        [52] "Pancreatic endocrine cell"            
+        [53] "Acinar cell"                          
+        [54] "Embryonic stem cell"                  
+        [55] "Glandular epithelial cell"            
+        [56] "Spermatid"                            
+        [57] "Spermatocyte"                         
+        [58] "Pit cell"                             
+        [59] "G cell"                               
+        [60] "Parietal cell"                        
+        [61] "Chief cell"                           
+        [62] "Collecting duct intercalated cell"    
+        [63] "Invasive spongiotrophoblast" 
+
+    with coarse (lineage) labels:
+
+         [1] "Stromal"       "Immune"        "Muscle"        "Secretory"    
+         [5] "Endothelial"   "Other"         "Erythroid"     "Neuron"       
+         [9] "Epithelial"    "Germ"          "Proliferating"
+
+
+    2.2     tmuris (tabula muris)
+    -----------------------------
+
+
+                                  homo sapiens
+                                  ============
+
+
+1   bulk rna references
+-----------------------
+
+    1.1     monaco
+    --------------
+
+    *   immune cells
+
+    the monaco reference consists of bulk rna-seq samples of sorted immune cell
+    populations from gse107011 (monaco et al. 2019).
+
+    this is the human immune reference that best covers all of the bases for a
+    typical pbmc sample. it provides expansive b and t cell subsets,
+    differentiates between classical and non-classical monocytes, includes
+    basic dendritic cell subsets, and also includes neutrophil and basophil
+    samples to help identify small contaminating populations that may have
+    slipped into a pbmc preparation.
+
+         [1] "Naive CD8 T cells"             "Central memory CD8 T cells"   
+         [3] "Effector memory CD8 T cells"   "Terminal effector CD8 T cells"
+         [5] "MAIT cells"                    "Vd2 gd T cells"               
+         [7] "Non-Vd2 gd T cells"            "Follicular helper T cells"    
+         [9] "T regulatory cells"            "Th1 cells"                    
+        [11] "Th1/Th17 cells"                "Th17 cells"                   
+        [13] "Th2 cells"                     "Naive CD4 T cells"            
+        [15] "Progenitor cells"              "Naive B cells"                
+        [17] "Non-switched memory B cells"   "Exhausted B cells"            
+        [19] "Switched memory B cells"       "Plasmablasts"                 
+        [21] "Classical monocytes"           "Intermediate monocytes"       
+        [23] "Non classical monocytes"       "Natural killer cells"         
+        [25] "Plasmacytoid dendritic cells"  "Myeloid dendritic cells"      
+        [27] "Low-density neutrophils"       "Low-density basophils"        
+        [29] "Terminal effector CD4 T cells"
+
+    with coarse labels:
+
+         [1] "CD8+ T cells"    "T cells"         "CD4+ T cells"    "Progenitors"    
+         [5] "B cells"         "Monocytes"       "NK cells"        "Dendritic cells"
+         [9] "Neutrophils"     "Basophils" 
+
+
+    1.2     blueprint
+    -----------------
+
+    *   immune cells
+    *   stroma cells
+
+    the blueprint/encode reference consists of bulk rna-seq data for pure stroma
+    and immune cells generated by blueprint (martens and stunnenberg 2013) and
+    encode projects (the encode project consortium 2012).
+
+         [1] "Neutrophils"                   "Monocytes"                    
+         [3] "MEP"                           "CD4+ T-cells"                 
+         [5] "Tregs"                         "CD4+ Tcm"                     
+         [7] "CD4+ Tem"                      "CD8+ Tcm"                     
+         [9] "CD8+ Tem"                      "NK cells"                     
+        [11] "naive B-cells"                 "Memory B-cells"               
+        [13] "Class-switched memory B-cells" "HSC"                          
+        [15] "MPP"                           "CLP"                          
+        [17] "GMP"                           "Macrophages"                  
+        [19] "CD8+ T-cells"                  "Erythrocytes"                 
+        [21] "Megakaryocytes"                "CMP"                          
+        [23] "Macrophages M1"                "Macrophages M2"               
+        [25] "Endothelial cells"             "DC"                           
+        [27] "Eosinophils"                   "Plasma cells"                 
+        [29] "Chondrocytes"                  "Fibroblasts"                  
+        [31] "Smooth muscle"                 "Epithelial cells"             
+        [33] "Melanocytes"                   "Skeletal muscle"              
+        [35] "Keratinocytes"                 "mv Endothelial cells"         
+        [37] "Myocytes"                      "Adipocytes"                   
+        [39] "Neurons"                       "Pericytes"                    
+        [41] "Preadipocytes"                 "Astrocytes"                   
+        [43] "Mesangial cells"
+
+    with coarse labels:
+
+         [1] "Neutrophils"       "Monocytes"         "HSC"              
+         [4] "CD4+ T-cells"      "CD8+ T-cells"      "NK cells"         
+         [7] "B-cells"           "Macrophages"       "Erythrocytes"     
+        [10] "Endothelial cells" "DC"                "Eosinophils"      
+        [13] "Chondrocytes"      "Fibroblasts"       "Smooth muscle"    
+        [16] "Epithelial cells"  "Melanocytes"       "Skeletal muscle"  
+        [19] "Keratinocytes"     "Myocytes"          "Adipocytes"       
+        [22] "Neurons"           "Pericytes"         "Astrocytes"       
+        [25] "Mesangial cells
+    
+
+    1.3     novershtern
+    -------------------
+
+    *   immune cells (hematopoietic)
+
+         [1] "Basophils"                                 
+         [2] "Naive B cells"                             
+         [3] "Mature B cells class able to switch"       
+         [4] "Mature B cells"                            
+         [5] "Mature B cells class switched"             
+         [6] "Common myeloid progenitors"                
+         [7] "Plasmacytoid Dendritic Cells"              
+         [8] "Myeloid Dendritic Cells"                   
+         [9] "Eosinophils"                               
+        [10] "Erythroid_CD34+ CD71+ GlyA-"               
+        [11] "Erythroid_CD34- CD71+ GlyA-"               
+        [12] "Erythroid_CD34- CD71+ GlyA+"               
+        [13] "Erythroid_CD34- CD71lo GlyA+"              
+        [14] "Erythroid_CD34- CD71- GlyA+"               
+        [15] "Granulocyte/monocyte progenitors"          
+        [16] "Colony Forming Unit-Granulocytes"          
+        [17] "Granulocytes (Neutrophilic Metamyelocytes)"
+        [18] "Granulocytes (Neutrophils)"                
+        [19] "Hematopoietic stem cells_CD133+ CD34dim"   
+        [20] "Hematopoietic stem cells_CD38- CD34+"      
+        [21] "Colony Forming Unit-Megakaryocytic"        
+        [22] "Megakaryocytes"                            
+        [23] "Megakaryocyte/erythroid progenitors"       
+        [24] "Colony Forming Unit-Monocytes"             
+        [25] "Monocytes"                                 
+        [26] "Mature NK cells_CD56- CD16+ CD3-"          
+        [27] "Mature NK cells_CD56+ CD16+ CD3-"          
+        [28] "Mature NK cells_CD56- CD16- CD3-"          
+        [29] "NK T cells"                                
+        [30] "Early B cells"                             
+        [31] "Pro B cells"                               
+        [32] "CD8+ Effector Memory RA"                   
+        [33] "Naive CD8+ T cells"                        
+        [34] "CD8+ Effector Memory"                      
+        [35] "CD8+ Central Memory"                       
+        [36] "Naive CD4+ T cells"                        
+        [37] "CD4+ Effector Memory"                      
+        [38] "CD4+ Central Memory" 
+
+    with coarse labels:
+
+         [1] "Basophils"       "B cells"         "CMPs"            "Dendritic cells"
+         [5] "Eosinophils"     "Erythroid cells" "GMPs"            "Granulocytes"   
+         [9] "HSCs"            "Megakaryocytes"  "MEPs"            "Monocytes"      
+        [13] "NK cells"        "NK T cells"      "CD8+ T cells"    "CD4+ T cells"
+
+
+2   single cell references
+--------------------------
+
+    2.1     hca (human cell landscape)
+    ----------------------------------
