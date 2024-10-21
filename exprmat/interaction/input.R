@@ -101,12 +101,13 @@ if (pargs $ cond |> length() == 0) {
   filter <- parse_subset(pargs $ cond)
 }
 
+table(filter) |> print()
 filter_cell <- shared[["meta_sample"]][filter, ]
-cellnames <- SeuratObject::Cells(filter_expr)
 
 shared[["seurat"]] $ .temp.filter <- filter
 filter_expr <- shared[["seurat"]] |> subset(subset = .temp.filter == TRUE)
 shared[["seurat"]] $ .temp.filter <- NULL
+cellnames <- SeuratObject::Cells(filter_expr)
 
 # seurat requires a non-unique gene name for each feature. while this should
 # also be compatible with hgnc names, the few (3 in human genome) genes whose
@@ -116,12 +117,14 @@ shared[["seurat"]] $ .temp.filter <- NULL
 
 #. counts <- SeuratObject::GetAssayData(filter_expr, layer = "counts")
 
-# cellphone db requires normalized data in linear space.
-# we can not determine whether the data stored in 'counts' are normalized or not
-# so we just exponentiate the data layer.
+#! cellphone db requires normalized data in linear space.
+#! we can not determine whether the data stored in 'counts' are normalized or not
+#! so we just exponentiate the data layer.
 
-norm <- SeuratObject::GetAssayData(filter_expr, layer = "data") |> exp() |> t()
-norm <- norm |> as("sparseMatrix")
+# NO, NO, cellphonedb just uses data slot, the log-transformed ones.
+
+norm <- SeuratObject::GetAssayData(filter_expr, layer = "data") |> t()
+norm <- norm
 rownames(norm) <- paste("c", seq_along(cellnames), sep = "")
 colnames(norm) <- shared[["meta_gene"]] $ seurat_names
 
@@ -138,7 +141,7 @@ gene_select <- match(
 ensembl_list <- gene_ensembl_expand[gene_select, ] $ ensembl
 
 ann <- anndata::AnnData(
-  X = norm |> as("sparseMatrix"),
+  X = norm |> base::as.matrix(),
   obs = data.frame(
     name = cellnames,
     cluster = pull(filter_cell, pargs $ cluster),

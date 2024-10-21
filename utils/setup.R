@@ -100,4 +100,6 @@ required <- setdiff(unique(packs), present)
 options("repos" = c(CRAN = "https://mirrors.tuna.tsinghua.edu.cn/CRAN/"))
 options("BioC_mirror" = "https://mirrors.tuna.tsinghua.edu.cn/bioconductor/")
 
+print(required)
+
 BiocManager::install(required, ask = FALSE, update = FALSE, Ncpus = 100)
