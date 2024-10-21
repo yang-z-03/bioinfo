@@ -64,6 +64,7 @@ ctref
 
 # Python related hidden files
 __pycache__
+.ipynb_checkpoints
 
 # C related hidden files
 *.o

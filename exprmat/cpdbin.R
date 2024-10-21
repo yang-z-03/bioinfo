@@ -1,1 +1,1 @@
-/home/yang-z/Desktop/bioinfo/exprmat/interaction/input.R
+interaction/input.R
