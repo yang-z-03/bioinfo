@@ -48,41 +48,45 @@ targetdb <- readRDS(targetdb)
 # the entrezids to be queried may rest in either entrez1 or entrez2.
 # look for convtable to find them.
 
-orthologs <- NULL
-human_entrez <- NULL
+key <- convtable[convtable $ entrez1 %in% entrezids, ]
+key <- key[key $ tax2 == 9606, ]
+key2 <- convtable[convtable $ entrez2 %in% entrezids, ]
+key2 <- key2[key2 $ tax1 == 9606, ]
+key2 <- data.frame(
+  tax1 = key2 $ tax2,
+  entrez1 = key2 $ entrez2,
+  relation = key2 $ relation,
+  tax2 = key2 $ tax1,
+  entrez2 = key2 $ entrez1
+)
 
-for (id in entrezids) {
-  key <- convtable[convtable $ entrez1 == id, ]
-  key <- key[key $ tax2 == pargs $ target, ]
-  key2 <- convtable[convtable $ entrez2 == id, ]
-  key2 <- key2[key2 $ tax1 == pargs $ target, ]
-  key2 <- data.frame(
-    tax1 = key2 $ tax2,
-    entrez1 = key2 $ entrez2,
-    relation = key2 $ relation,
-    tax2 = key2 $ tax1,
-    entrez2 = key2 $ entrez1
-  )
+# remove duplicates within key1 or key2: we should just abandon all of the
+# copies. since multi-mapping orthologs are directly ignored.
 
-  key <- rbind(key, key2) |> tibble()
-  key <- key[!duplicated(key), ]
+has_dupl <- key $ entrez2[key $ entrez2 |> duplicated()] |> unique()
+key <- key[!(key $ entrez2 %in% has_dupl), ]
+has_dupl <- key2 $ entrez2[key2 $ entrez2 |> duplicated()] |> unique()
+key2 <- key2[!(key2 $ entrez2 %in% has_dupl), ]
 
-  orthoinfo <- match(key $ entrez2, targetdb $ entrez)
-  flag <- !is.na(orthoinfo)
-  orthoinfo <- orthoinfo[flag]
-  key <- key[flag, ]
+key <- rbind(key, key2) |> tibble()
+key <- key[!duplicated(key), ]
 
-  if (length(orthoinfo) == 1) {
-    orthologs <- c(orthologs, ortholog = targetdb[orthoinfo, ] $ symbol)
-    human_entrez <- c(orthologs, ortholog = targetdb[orthoinfo, ] $ entrez)
-  } else if (length(orthoinfo) > 1) {
-    orthologs <- c(orthologs, ".multi")
-    human_entrez <- c(human_entrez, ".multi")
-  } else {
-    orthologs <- c(orthologs, ".none")
-    human_entrez <- c(human_entrez, ".none")
-  }
-}
+cat(blue("ortholog correspondence table:", crlf, crlf))
+print(key)
+
+orthoinfo <- match(key $ entrez2, targetdb $ entrez)
+flag <- !is.na(orthoinfo)
+orthoinfo <- orthoinfo[flag]
+key <- key[flag, ]
+
+cat(crlf)
+cat(blue("one -> one ortholog table"), crlf)
+print(targetdb[orthoinfo, ] |> tibble())
+
+targetortho <- targetdb[orthoinfo, ]
+matches <- match(shared $ meta_gene $ entrez, key $ entrez1)
+orthologs <- targetortho[matches, ] $ symbol
+human_entrez <- targetortho[matches, ] $ entrez
 
 orthotable <- data.frame(
   gene = shared $ meta_gene $ gene,
@@ -95,6 +99,7 @@ orthotable <- data.frame(
 
 if (!dir.exists("cpdb")) dir.create("cpdb")
 
+cat(crlf)
 cat(blue("writing homolog table ..."), crlf)
 write.table(orthotable, file = "cpdb/orthologs.tsv", sep = "\t",
             row.names = FALSE, col.names = TRUE, quote = FALSE)
