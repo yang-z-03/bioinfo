@@ -68,6 +68,7 @@ homology/*/*/*.rds
 homology/*/*.gz
 
 sam/test
+sam/extrumi
 
 # msigdb/
 # !msigdb/readme
