@@ -67,9 +67,9 @@ taxo <- readRDS("taxo.rds")
 if (length(taxo $ g2m) == 0 || length(taxo $ s) == 0) {
   if (pargs $ cc) {
     cat(str_wrap(
-      yellow("your reference genome doesn't support cell cycle scoring."),
+      paste(yellow("your reference genome doesn't support cell cycle scoring."),
       "you should rerun refer command with --s-phase and --g2m-phase.",
-      "we have turned on --no-cc automatically for you."
+      "we have turned on --no-cc automatically for you.")
     ))
   }
   pargs $ cc <- FALSE
