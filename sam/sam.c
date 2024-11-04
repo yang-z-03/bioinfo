@@ -32,8 +32,6 @@ char* read_all(FILE* f, size_t *fsize) {
     // will be erronous.
     
     size_t getbyte = fread(buffer, sizeof(char), read_buffer_size - 1, f);
-    fprintf(stderr, "get: %ld, last char %c %c. \n", getbyte, buffer[getbyte - 1], buffer[getbyte]);
-    
     while(getbyte > 0)
     {
         char *old = content;
@@ -51,7 +49,6 @@ char* read_all(FILE* f, size_t *fsize) {
 
         strcat(content, buffer);
         getbyte = fread(buffer, sizeof(char), read_buffer_size - 1, f);
-        fprintf(stderr, "get: %ld, last char %c %c. \n", getbyte, buffer[getbyte - 1], buffer[getbyte]);
     }
 
     if (ferror(f)) {
