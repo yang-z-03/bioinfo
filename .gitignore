@@ -58,6 +58,7 @@ gencode/9606/*
 analyses
 
 ctref/*/*
+!ctref/manual/*
 !ctref/readme
 
 ucsc/*
