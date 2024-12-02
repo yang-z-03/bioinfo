@@ -1,0 +1,102 @@
+
+  chromium cellular and molecular barcode information for each read is stored
+  in the following TAG fields:
+
+  tag	type	description
+  ----  ------  ---------------------------------------------------------------
+  CB	Z	    chromium cellular barcode sequence that is error-corrected and
+                confirmed against a list of known-good barcode sequences. for
+                multiplex flex, the cellular barcode is a combination of the 10x 
+                gem barcode and probe barcode sequences.
+
+  CR	Z	    chromium cellular barcode sequence as reported by the sequencer.
+                for multiplex flex, the cellular barcode is a combination of the
+                10x gem barcode and probe barcode sequences.
+
+  CY	Z	    chromium cellular barcode read quality. for multiplex flex, the
+                cellular barcode is a combination of the 10x gem barcode and
+                probe barcode sequences. phred scores as reported by sequencer.
+
+  UB	Z	    chromium molecular barcode sequence that is error-corrected
+                among other molecular barcodes with the same cellular barcode
+                and gene alignment.
+
+  UR	Z	    chromium molecular barcode sequence as reported by the sequencer.
+
+  UY	Z	    chromium molecular barcode read quality.
+                phred scores as reported by sequencer.
+
+  TR	Z	    trimmed sequence. for the single cell 3' v1 chemistry, this is
+                trailing sequence following the umi on read 2. for the single
+                cell 3' v2 chemistry, this is trailing sequence following the
+                cell and molecular barcodes on read 1.
+
+  RG	Z	    identifies the read group, indicating the library source of each read.
+  
+  the cell barcode CB tag includes a suffix with a dash separator followed by a number:
+  
+    AAACCCAAGGAGAGTA-1
+  
+  this number denotes the gem well, and is used to virtualize barcodes in order
+  to achieve a higher effective barcode diversity when combining samples
+  generated from separate gem well channel runs. normally, this number will be
+  "1" across all barcodes when analyzing a sample generated from a single gem
+  well channel. it can either be left in place and treated as part of a unique
+  barcode identifier, or explicitly parsed out to leave only the barcode
+  sequence itself.
+  
+  the following tags will also be present on reads that mapped to the genome and
+  overlapped an exon by at least one base pair. reads aligned to the
+  transcriptome across exon junctions in the genome will have a large gap in
+  their cigar string i.e., 35m225n64m. a read may align to multiple transcripts
+  and genes, but it is only considered confidently mapped to the transcriptome
+  if it is mapped to a single gene (see this page for methods to check for
+  multi-mapped reads). cell ranger modifies mapq values; see the mm tag below.
+
+  tag	type	description
+  ----  ------  ---------------------------------------------------------------
+  TX	Z	    present in reads aligned to the same strand as the transcripts
+                in this semicolon-separated list that are compatible with this
+                alignment. transcripts are specified with the transcript_id key 
+                in the reference gtf attribute column. the format of each entry 
+                is [transcript_id],[strand][pos],[cigar]. strand is + as reads 
+                with this annotation were correctly aligned in the expected 
+                orientation (in contrast to the an tag below, where the strand 
+                is - to indicate antisense alignments). pos is the alignment 
+                offset in transcript coordinates, and cigar is the cigar string 
+                in transcript coordinates.
+
+  AN	Z	    present for reads that are aligned to the antisense strand of
+                annotated transcripts. if intron counts are not included (with
+                include-introns=false), this tag is the same as the tx tag but
+                with - values for the strand identifier. if introns are included
+                (include-introns=true), the an tag contains the corresponding
+                antisense gene identifier values (starting with ensg) rather
+                than transcript identifier values (starting with enst).
+
+  GX	Z	    semicolon-separated list of gene ids that are compatible with
+                this alignment. gene ids are specified with the gene_id key in
+                the reference gtf attribute column.
+
+  GN	Z	    semicolon-separated list of gene names that are compatible with
+                this alignment. gene names are specified with gene_name key in
+                the reference gtf attribute column.
+
+  mm	i	    set to 1 if the genome-aligner (star) originally gave a 
+                mapq < 255 (it multi-mapped to the genome) and cell ranger
+                changed it to 255 because the read overlapped exactly one gene.
+
+  RE	A	    single character indicating the region type of this alignment
+                (E = exonic, N = intronic, I = intergenic).
+
+  pa	i	    the number of poly-a nucleotides trimmed from the 3' end of
+                read 2. up to 10% mismatches are permitted.
+
+  pr	Z	    for flex, a semicolon-separated list of probe ids: one probe id
+                if both read halves align to the same probe, and two probe ids
+                if each read half aligns to a different probe, or na if a read 
+                half does not align to a probe.
+
+  ts	i	    the number of template switch oligo (tso) nucleotides trimmed
+                from the 5' end of read 2. up to 3 mismatches are permitted. 
+                the 30-bp tso sequence is AAGCAGTGGTATCAACGCAGAGTACATGGG.

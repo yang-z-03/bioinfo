@@ -1,0 +1,72 @@
+
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{url}                           % simple URL typesetting
+\usepackage{booktabs}                      % professional-quality tables
+\usepackage{amsfonts}                      % blackboard math symbols
+\usepackage{amsmath}
+\usepackage{bbm}
+\usepackage{bm}
+\usepackage{nicefrac}                      % compact symbols for 1/2, etc
+
+% this packages initially aims to break links longer than one line, to generate
+% less of the overfull boxes warnings. but these packages supports only pdftex.
+% \usepackage[breaklinks]{hyperref}        % break the links that are too long
+% \usepackage{url}
+% \usepackage{breakurl}
+
+\usepackage[parfill]{parskip}
+
+\title{Seurat v3 HVG implementation}
+\author{Adam Gayoso}
+\date{March 2020}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+This note describes the implementation of the Seurat v3 HVG method in Python.
+This arithmetic is required for handling sparse matrices.
+
+Let $\mu_g$ and $\sigma_g$ be the mean and regularized standard deviation per
+gene $g$ as described in the Seurat v3 HVG method. Let $X_{ng}$ be the UMI
+counts for cell $n$ and gene $g$. $N$ is the total number of cells.
+
+This note is based on the implementation here
+\url{https://github.com/satijalab/seurat/blob/master/R/preprocessing.R} and here
+\url{https://github.com/satijalab/seurat/blob/master/src/data_manipulation.cpp}.
+
+The variance of the gene after the variance stabilizing transformation is
+\begin{align}
+	\frac{1}{N -1}\sum_{i=1}^N(\frac{X_{ig}-\mu_g}{\sigma_g})^2
+\label{eq:var}
+\end{align}
+
+This is due to the fact that after the transformation, each gene has mean 0.
+With some expansion,
+\begin{align}
+	\frac{1}{N -1}\sum_{i=1}^N(\frac{X_{ig}-\mu_g}{\sigma_g})^2 & = \frac{1}{N-1}\frac{1}{\sigma_g^2}\sum(X_{ig}^2-2X_{ig}\mu_g + \mu_g^2)                                        \\
+	                                                            & =\frac{1}{N-1}\frac{1}{\sigma_g^2}N\mu^2 + \frac{1}{N-1}\frac{1}{\sigma_g^2}\sum_{i=1}^N(X_{ig}^2-2X_{ig}\mu_g)
+\end{align}
+Note that this equation is simple to compute with sparse matrices.
+Seurat v3 clips values in Equation \ref{eq:var} so that
+\begin{align}
+	\frac{1}{N -1}\sum_{i=1}^N(\min\{\frac{X_{ig}-\mu_g}{\sigma_g}, \sqrt{N}\})^2
+\label{eq:var_adj}
+\end{align}
+
+This is equivalent to setting values that satisfy
+\begin{align}
+	\frac{X_i-\mu}{\sigma} > \sqrt{N}
+\end{align}
+to
+\begin{align}
+	X_i = \sigma\sqrt{N} + \mu.
+\end{align}
+
+This should be done before computing the sparse-friendly variance.
+
+\end{document}

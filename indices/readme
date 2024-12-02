@@ -1,0 +1,47 @@
+
+  these indices are based on a shared set of annotations and genomes. their
+  sequence name conventions are adopted from 10x cell ranger.
+
+  the sequences are downloaded and processed with a cellranger preprocess pipeline
+  and downloaded from <http://ftp.ensembl.org/pub/release-109/fasta/*>
+  ensembl database. and the chromosome names are generally renamed to those
+  starting with 'chr' (original ensembl fastas have just names with pure numbers)
+  mitochondrial genome is named as chrM.
+
+  annotation files (gtf) are downloaded from gencode annotations:
+  <http://ftp.ebi.ac.uk/pub/databases/gencode/>, modified with cellranger format
+  and filtered to only contain a certain biotypes:
+
+    * protein_coding
+    * protein_coding_LoF
+    * lncRNA
+    * IG_C_gene
+    * IG_D_gene
+    * IG_J_gene
+    * IG_LV_gene
+    * IG_V_gene
+    * IG_V_pseudogene
+    * IG_J_pseudogene
+    * IG_C_pseudogene
+    * TR_C_gene
+    * TR_D_gene
+    * TR_J_gene
+    * TR_V_gene
+    * TR_V_pseudogene
+    * TR_J_pseudogene
+
+  such pre-formatted files are linked under the shared directory, for build with
+  other non-cellranger pipelines.
+
+  the corresponding full version of the annotation is stored in gencode/taxid
+  folder, and coding gene is filtered out to generate a table and .rds file for
+  easy access of genomic coding features.
+
+  we also have tables for other annotation sources. gencode annotation make use
+  of ensembl gene index, and there is also an ensembl's official one, having fewer
+  features than this. ncbi refseq provides another set of annotation files,
+  stored in refseq/taxid folder, and have distinct metadata syntax other than
+  ensembl/gencode gffs. and these two versions of annotation do have some annotating
+  differences. for more compatibility with cellranger based data, we recommend
+  using the same annotation when processing droplet based single cell transcriptomics.
+  
