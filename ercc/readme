@@ -1,3 +1,4 @@
+
 Mapping Reads to ERCC Control Sequences with BioScope 1.2.1 
 ------------------------------------------------------------
 
@@ -88,5 +89,3 @@ read count and RPKM:
   $ tail -n 92 countagresult.txt | cut -f9 | cut -d';' -f3 | sed 's/RPKM\|"\| //g' > RPKM
   $ paste gene_id raw_count RPKM > ERCC.counts
   $ rm gene_id raw_count RPKM
-
-
