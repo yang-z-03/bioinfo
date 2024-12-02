@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-rlwrap ~/bioinfo/exprmat/main.R $*
+rlwrap -n ~/bioinfo/exprmat/main.R $*
