@@ -97,9 +97,7 @@ present <- installed.packages() |> rownames()
 
 required <- setdiff(unique(packs), present)
 
-options("repos" = c(CRAN = "https://mirrors.tuna.tsinghua.edu.cn/CRAN/"))
-options("BioC_mirror" = "https://mirrors.tuna.tsinghua.edu.cn/bioconductor/")
-
-print(required)
-
+options("repos" = c(CRAN = "https://mirrors.tuna.tsinghua.edu.cn/CRAN"))
+install.packages("BiocManager", ask = FALSE, update = FALSE)
+options("BioC_mirror" = "https://mirrors.tuna.tsinghua.edu.cn/bioconductor")
 BiocManager::install(required, ask = FALSE, update = FALSE, Ncpus = 100)
