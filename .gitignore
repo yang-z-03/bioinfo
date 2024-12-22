@@ -71,6 +71,8 @@ homology/*/*.gz
 sam/test
 sam/extrumi
 
+algtest.R
+
 # msigdb/
 # !msigdb/readme
 
