@@ -1,11 +1,5 @@
 #!/usr/bin/env Rscript
 
-.libPaths(c(
-  "~/R/bioinfo/4.4",
-  "/usr/lib64/R/library",
-  "/usr/share/R/library"
-))
-
 suppressPackageStartupMessages({
   require(tibble)
   require(dplyr)

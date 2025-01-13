@@ -73,6 +73,8 @@ sam/extrumi
 
 algtest.R
 
+tcga/*/gexp
+
 # msigdb/
 # !msigdb/readme
 
