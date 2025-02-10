@@ -75,3 +75,4 @@ options(BioC_mirror = 'https://mirrors.westlake.edu.cn/bioconductor')
 BiocManager::install('3.20')
 required = c('Seurat', 'SingleR', 'clusterProfiler', 'crayon', 'tibble')
 BiocManager::install(required, ask = FALSE, update = FALSE, Ncpus = 100)
+

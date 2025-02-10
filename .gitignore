@@ -68,6 +68,8 @@ homology/*/*.rds
 homology/*/*/*.rds
 homology/*/*.gz
 
+metabo/*
+
 sam/test
 sam/extrumi
 
