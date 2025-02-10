@@ -24,7 +24,7 @@ parser $ add_argument(
 )
 
 parser $ add_argument(
-  "--miniconda", type = "character", dest = "miniconda", default = "base",
+  "--conda", type = "character", dest = "conda", default = "base",
   help = "use miniconda environment"
 )
 
@@ -106,7 +106,7 @@ suppressPackageStartupMessages({
   require(scuttle)
 
   source("utils.R")
-  reticulate::use_condaenv(main_pargs $ miniconda)
+  reticulate::use_condaenv(main_pargs $ conda)
 })
 
 # set up the common repl interface

@@ -94,8 +94,10 @@ int line_length(char* buffer) {
 int field_length(char* buffer) {
     if (*buffer == '\0') return 0;
     char* next_field = strchr(buffer, '\t');
-    if (next_field == NULL) return 0;
     char* next_line = strchr(buffer, '\n');
-    if (next_line == NULL) return next_field - buffer;
+    if (next_field == NULL) {
+        if (next_line == NULL) return 0;
+        else return next_line - buffer;
+    }
     return min(next_line - buffer, next_field - buffer);
 }
