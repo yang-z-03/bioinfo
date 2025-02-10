@@ -3,7 +3,6 @@ require(reticulate)
 
 scrublet <- function(
   seurat_obj,
-  python_home               = Sys.which("python"),
   return_results_only       = FALSE,
   min_counts                = 2,
   min_cells                 = 3,
@@ -13,8 +12,6 @@ scrublet <- function(
   sim_doublet_ratio         = 2,
   n_neighbors               = NULL
 ) {
-
-  reticulate::use_python(python_home)
 
   # test whether have the modules installed
   if (!reticulate::py_module_available("scrublet")) {
@@ -65,7 +62,6 @@ scrublet <- function(
 
 scrublet_matrix <- function(
   seurat_obj, matrix,
-  python_home               = Sys.which("python"),
   return_results_only       = FALSE,
   min_counts                = 2,
   min_cells                 = 3,
@@ -75,8 +71,6 @@ scrublet_matrix <- function(
   sim_doublet_ratio         = 2,
   n_neighbors               = NULL
 ) {
-
-  reticulate::use_python(python_home)
 
   # test whether have the modules installed
   if (!reticulate::py_module_available("scrublet")) {

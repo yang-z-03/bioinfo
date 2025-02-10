@@ -24,8 +24,8 @@ parser $ add_argument(
 )
 
 parser $ add_argument(
-  "--local-libs", dest = "local.lib", default = FALSE, action = "store_true",
-  help = "use local library"
+  "--conda", type = "character", dest = "conda", default = "base",
+  help = "use miniconda environment"
 )
 
 parser $ add_argument(
@@ -75,16 +75,6 @@ parse_script <- function(fname) {
 
 cmdlist <- parse_script(main_pargs $ script)
 
-if (main_pargs $ local.lib) {
-  .libPaths(c(
-    "~/R/bioinfo/4.4",
-    "/usr/lib64/R/library",
-    "/usr/share/R/library"
-  ))
-} else {
-  .libPaths("~/miniconda/lib/R/library")
-}
-
 # global path resources
 
 gp_scrublet <- "~/bioinfo/scrublet"
@@ -116,6 +106,7 @@ suppressPackageStartupMessages({
   require(scuttle)
 
   source("utils.R")
+  reticulate::use_condaenv(main_pargs $ conda)
 })
 
 # set up the common repl interface
