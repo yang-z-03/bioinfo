@@ -276,14 +276,9 @@ for prefx in fprefix:
         continue
 
     import json
-    try:
-        # this content may not be proper json. we just write them down.
-        with open(f'query/{acctype}/{acc}.json', 'w') as fo:
-            fo.write(raw_content)
-            print(f'  (saved) - {acctype}:{acc}')
-
-    except:
-        print(f'  (json parse fail) - {acctype}:{acc}')
+    # this content may not be proper json. we just write them down.
+    with open(f'query/{acctype}/{acc}.json', 'w') as fo:
+        fo.write(raw_content)
+        print(f'  (saved) - {acctype}:{acc}')
 
     time.sleep(1) # sleep for 10s.
-
