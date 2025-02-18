@@ -94,6 +94,13 @@ elif opt.task == 'merge':
     from merge import display
     display(reg, opt.nrow, opt.status)
 
+elif opt.task == 'sample':
+    from sample import display
+    display(reg, opt.nrow, opt.status)
+
+elif opt.task == 'chat':
+    import chat
+
 elif opt.task == 'clean':
     searchs = [x + ':' + y for x, y in zip(reg['type'], reg['accession'])]
     names = reg['name']
