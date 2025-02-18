@@ -1,5 +1,5 @@
 
-def printtbl(table, styles = {}, appends = {}, nfrom = 0, nto = 999):
+def printtbl(table, styles = {}, appends = {}, nfrom = 0, nto = 9999):
     
     vars = []
     widths = []

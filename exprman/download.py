@@ -139,6 +139,10 @@ def display(registry, n_row, show_status = False):
                 import GEOparse as geo
                 print_replace(common_length('querying geo record ...', 40))
                 gse = geo.get_GEO('GSE{}'.format(acc), destdir = 'geo', silent = True)
+                
+                if 'supplementary_file' not in gse.metadata.keys():
+                    continue
+                
                 files = gse.metadata['supplementary_file']
                 downlog = open(f'processed/logs/{name}.dnlog', 'w')
                 downlog.writelines([f'job start [{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}] \n\n'])

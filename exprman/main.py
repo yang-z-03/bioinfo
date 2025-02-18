@@ -94,6 +94,25 @@ elif opt.task == 'merge':
     from merge import display
     display(reg, opt.nrow, opt.status)
 
+elif opt.task == 'sample':
+    from sample import display
+    if opt.acc != '':
+        dsname = 'undetermined'
+        searchs = [x + ':' + y for x, y in zip(reg['type'], reg['accession'])]
+        if opt.acc not in searchs:
+            error('unrecognized accession number. check configs/register for details')
+        else: 
+            display({
+                'type': [reg['type'][searchs.index(opt.acc)]],
+                'accession': [reg['accession'][searchs.index(opt.acc)]],
+                'name': [reg['name'][searchs.index(opt.acc)]]
+            }, opt.nrow, opt.status)
+    
+    else: display(reg, opt.nrow, opt.status)
+
+elif opt.task == 'chat':
+    import chat
+
 elif opt.task == 'clean':
     searchs = [x + ':' + y for x, y in zip(reg['type'], reg['accession'])]
     names = reg['name']
