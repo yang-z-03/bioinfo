@@ -8,7 +8,7 @@ from ansi import fore_green, fore_cyan, ansi_reset
 
 # model = 'deepseek-r1-distill-qwen-14b'
 # model = 'deepseek-r1-distill-llama-8b'
-model = 'deepseek-ai/DeepSeek-R1'
+model = 'Pro/deepseek-ai/DeepSeek-R1'
 apikey = 'sk-tydjnkebvgdqwipaiowmuqtpneahwqziyjaqbqzdwrmobngq'
 
 # client = openai.OpenAI(base_url = "http://127.0.0.1:1234/v1", api_key = "lm-studio")
@@ -40,7 +40,8 @@ session_system = [{
         'You should give your result in JSON format according to the given JSON schema. '
         'You should give your result entirely in English. '
         'You should not try to fix typos, just leave it as it is. '
-        'Do not contain anything other than ["accession", "dtype", "strain", "tissue", "genotype", "age", "sex", "sort"] in your output JSON.'
+        'Do not contain anything other than ["accession", "dtype", "strain", "tissue", '
+        '"genotype", "age", "sex", "sort"] in your output JSON.'
 }]
 
 fprefix = []
@@ -93,7 +94,8 @@ preface = [
     'lowercased gene name, mutants should be notated with gene_symbol^(mutation_status) '
     'and "mutation_status" may describe coding alternations (for example "k18s") or'
     'allele heterozygosity (for example -/-, +/-). Do not try to alter the gene name, just '
-    'turn them to lowercase of what stated exactly in the text. (field "genotype")',
+    'turn them to lowercase of what stated exactly in the text. If there is no genotypic '
+    'modifications (or wild type), just place an "wt" here. (field "genotype")',
 
     'The age (field "age") of the animal should be written in units of weeks. We assume a month '
     'to be 4 weeks. Embryonic age should be written exactly as the original text. '
