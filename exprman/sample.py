@@ -2,7 +2,23 @@
 # produce a sample table with linked files.
 # we will not use the printtbl routines, but rather print by ourself.
 
-_f = open('configs/lookup', 'w')
+import os
+import pandas as pd
+
+_table_prev = None
+if os.path.exists('configs/lookup.tsv'):
+    _table_prev = pd.read_table('configs/lookup.tsv')
+    _table_prev['prefix'] = _table_prev['prefix'].astype('str')
+    os.remove('configs/lookup.tsv')
+    
+_f = open('configs/lookup.tsv', 'w')
+
+print(
+    'accession\tdataset\tsample\tdstype\ttax\t'
+    'dtype\tfiltered\tselected\tencode\tname\tprefix\t'
+    'strain\tsex\ttissue\tage\texpm\tgenetic\tsort',
+    file = _f
+)
 
 def formal_length(*_x, l = 40):
     
@@ -58,11 +74,55 @@ def yellow(x): return '\033[33m' + str(x) + '\033[0m'
 def cyan(x): return '\033[36m' + str(x) + '\033[0m'
 def printe(*a): print(*a, end = '', sep = '')
 
+def load_sample_config():
+    
+    # here, we will read the sample config file.
+    # if the file exist, we will interpret all existing record, and append
+    # non-existing datasets to the end of the file. but not changing the previous
+    # contents. the sample config is capable for commenting using '#'.
+
+    config = {}
+
+    current_dataset = '*'
+    current_sample = '*'
+
+    if os.path.exists('configs/samples'):
+        with open('configs/samples', 'r') as fr:
+            contents = fr.read().splitlines()
+            for line in contents:
+                if len(line.strip()) == 0: continue
+                if line.strip().startswith('#'): continue
+
+                tokens = line.strip().split()
+                if len(tokens) < 2: 
+                    error('syntax error:', line)
+                    continue
+
+                if tokens[0] == 'dataset':
+                    current_dataset = tokens[1]
+                    current_sample = '*'
+                    continue
+
+                elif tokens[0] == 'sample':
+                    current_sample = tokens[1]
+                    continue
+
+                elif tokens[0] == 'prop':
+                    if len(tokens) <= 2: continue
+                    if current_dataset not in config.keys():
+                        config[current_dataset] = {}
+                    if current_sample not in config[current_dataset].keys():
+                        config[current_dataset][current_sample] = {}
+                    config[current_dataset][current_sample][tokens[1]] = tokens[2]
+
+    return config
+
+
 def display(registry, n_row, show_status = False):
 
     n_total = 0
-    n_available_ds = 0
     n_available_sample = 0
+    manual_config = load_sample_config()
     
     for s_name, s_type, s_acc in zip(
         registry['name'], 
@@ -70,16 +130,16 @@ def display(registry, n_row, show_status = False):
         registry['accession']
     ):
 
-        n_total += 1
         if s_type != 'gse':
-            printe(formal_length(red(s_type), ':', yellow(s_acc), l = 40))
-            printe(formal_length(' dataset not supported.'))
-            print()
+            # print nothing for unsupported dataset. just skip it.
+            # printe(formal_length(red(s_type), ':', yellow(s_acc), l = 40))
+            # printe(formal_length(' dataset not supported.'))
+            # print()
             continue
 
         gserec = 'GSE' + s_acc
         import GEOparse as geo
-        gse = geo.get_GEO(gserec, destdir = 'geo', silent = True)
+        gse = geo.get_GEO(gserec, destdir = 'configs/geo', silent = True)
 
         fcatlog = {
             'dataset': {},
@@ -162,8 +222,11 @@ def display(registry, n_row, show_status = False):
             
             fcatlog['samples'][k] = samp_item
 
+        if not os.path.exists(f'src/{s_name}'):
+            continue
+
+        n_total += 1
         # list downloaded files
-        import os
         down = os.listdir(f'src/{s_name}')
         visible = []
         for x in down:
@@ -171,12 +234,11 @@ def display(registry, n_row, show_status = False):
         
         n_mtx_genes = []
         n_mtx_features = []
-        n_raw_h5 = []
-        n_filtered_h5 = []
-        n_undef_h5 = []
+        n_h5 = []
         unrecog = []
         removed = []
 
+        # filter and test the name conventions.
         for x in visible:
             if x.endswith('matrix.mtx') or x.endswith('matrix.mtx.gz'):
                 root = x.replace('matrix.mtx.gz', '').replace('matrix.mtx', '')
@@ -194,38 +256,19 @@ def display(registry, n_row, show_status = False):
                     if (root + 'barcodes.tsv') in visible: removed.append(root + 'barcodes.tsv')
                     if (root + 'barcodes.tsv.gz') in visible: removed.append(root + 'barcodes.tsv.gz')
                     continue
-            elif (x.endswith('.h5') or x.endswith('.h5.gz')) and 'raw_' in x:
-                n_raw_h5 += [x.replace('raw_feature_bc_matrix.h5.gz', '').replace('raw_feature_bc_matrix.h5', '') \
-                              .replace('raw_gene_bc_matrices_h5.h5.gz', '').replace('raw_gene_bc_matrices_h5.h5', '')]
-            elif (x.endswith('.h5') or x.endswith('.h5.gz')) and 'filtered_' in x:
-                n_filtered_h5 += [x.replace('filtered_feature_bc_matrix.h5.gz', '').replace('filtered_feature_bc_matrix.h5', '') \
-                                   .replace('filtered_gene_bc_matrices_h5.h5.gz', '').replace('filtered_gene_bc_matrices_h5.h5', '')]
             elif (x.endswith('.h5') or x.endswith('.h5.gz')):
-                n_undef_h5 += [x.replace('.h5.gz', '').replace('.h5', '')]
+                n_h5 += [x.replace('.h5.gz', '').replace('.h5', '')]
             else: unrecog += [x]
         
         for x in removed:
             unrecog.remove(x)
 
         # precedency rules
-        # h5f > h5r > mtx + mtxz > h5u
+        # h5f > h5r > mtx + mtxz （filtered > raw) > h5u
 
         # if sample contains its own set of matrix, we will ignore those provided
         # as a whole in the dataset root. if all samples provide no valid matrix
         # we will search the root directory.
-
-        printe(formal_length(red(s_type), ':', yellow(s_acc), l = 40))
-        if len(n_filtered_h5) > 0:
-            printe(' [h5f] ', red(len(n_filtered_h5)), '')
-        elif len(n_raw_h5) > 0:
-            printe(' [h5r] ', red(len(n_raw_h5)), '')
-        elif len(n_mtx_features) + len(n_mtx_genes) > 0:
-            if len(n_mtx_features) > 0:
-                printe(' [mtxz] ', red(len(n_mtx_features)), '')
-            if len(n_mtx_genes) > 0:
-                printe(' [mtx] ', red(len(n_mtx_genes)), '')
-        elif len(n_undef_h5) > 0:
-            printe(' [h5u] ', red(len(n_undef_h5)), '')
 
         # find the name from the catlog tree.
         def findname(root, catlog):
@@ -272,45 +315,116 @@ def display(registry, n_row, show_status = False):
                 .replace('-','.').replace('_','.') \
                 .replace('   ', '.').replace('  ', '.').replace(' ', '.')
         
-        def printinfo(prefix, catlog):
+        def getinfo(prefix, catlog, manual):
             fn = findname(prefix, catlog)
-
-            printe(' ')
+            
+            metadata = {
+                'accession': '',  # gse series
+                'dataset': s_name.replace(str(s_acc) + '-', '').replace(str(s_acc), ''), 
+                'sample': '',     # gsm sample, or 'root' if unknown.
+                'name': '',       # original sample name given by the database
+                'tax': '',        # taxonomy code, or mixed if more than one.
+                'dtype': '',      # file format, mtx, mtxz or h5
+                'dstype': '',     # dataset type, scrna etc.
+                # 'filtered': '', # if this is filtered. raw, filt or ?
+                # 'selected': '', # if this should be selected automatically. x or .
+                                  # note that all files in available extensions will be listed in this table
+                                  # but only some of the de-duplicated ones may be processed next.
+                                  # this is selected using our precedence rule.
+                
+                'prefix': '',     # the file prefix for selection (without the trailing matrix.tsv[.gz] or .h5[.gz]
+                # 'encode': '',   # unique sample encoding
+                'strain': '?',    # strain
+                'sex': '?',       # sex code, m for male, f for female, ? for unknown
+                'tissue': '?',    # tissue encode
+                'age': '?',       # age
+                'expm': '?',      # experiment grouping
+                'genetic': '?',
+                'sort': '?'
+            }
             
             if fn['acc'] == 'fail':
-                printe(red('cannot find parent.'))
-                return 0
+                
+                # this file exists, but with no explicit evidence (without inferrence) that
+                # it belongs to any of the samples.  in this case, we should only provide
+                # metadata information by ourself in our hand-make samples file.
+                
+                metadata['accession'] = 'gse:' + catlog['dataset']['acc'][0][3:]
+                metadata['sample'] = 'root'
+                fn['acc'] = catlog['dataset']['acc'][0]
+                fn['name'] = 'root'
+                
             elif fn['acc'].lower().startswith('gse'):
-                printe(formal_length(red('gse'), ':', yellow(fn['acc'].lower().replace('gse', '')), l = 16))
+                metadata['accession'] = 'gse:' + catlog['dataset']['acc'][0][3:]
+                metadata['sample'] = 'root'
+                
             elif fn['acc'].lower().startswith('gsm'):
-                printe(formal_length(red('gsm'), ':', green(fn['acc'].lower().replace('gsm', '')), l = 16))
-            else: printe(formal_length(red('?'), l = 16))
+                metadata['accession'] = 'gse:' + catlog['dataset']['acc'][0][3:]
+                metadata['sample'] = 'gsm:' + fn['acc'][4:]
             
-            printe(' ')
-
+            else:
+                metadata['accession'] = 'gse:' + catlog['dataset']['acc'][0][3:]
+                metadata['sample'] = 'root'
+            
             # print name only
-            if fn['acc'] == catlog['dataset']['acc'][0]:
-                printe(formal_length('root', l = 30))
-            elif fn['acc'] in catlog['samples'].keys():
-                printe(formal_length(uniform(catlog['samples'][fn['acc']]['name'][0]), l = 30))
+            # you should only set the name manually!
+                
+            # if fn['acc'] == catlog['dataset']['acc'][0]:
+            #     metadata['name'] = 'root'
+            # elif fn['acc'] in catlog['samples'].keys():
+            #     metadata['name'] = catlog['samples'][fn['acc']]['name'][0]
+            # else: metadata['name'] = 'root'
 
-            printe(' ')
-            
             if fn['acc'] == catlog['dataset']['acc'][0]:
-                printe(formal_length('mixed' if len(catlog['dataset']['tax']) > 1 else catlog['dataset']['tax'][0], l = 6))
-                if len(catlog['dataset']['tax']) > 1: return 0
-                if catlog['dataset']['tax'][0] != '10090': return 0
+                if len(catlog['dataset']['tax']) > 1: metadata['tax'] = 'mixed'
+                else: metadata['tax'] = catlog['dataset']['tax'][0]
                     
             elif fn['acc'] in catlog['samples'].keys():
-                printe(formal_length(uniform(
-                    'mixed' \
-                        if len(catlog['samples'][fn['acc']]['tax']) > 1 \
-                        else catlog['samples'][fn['acc']]['tax'][0]), l = 6))
-                if len(catlog['samples'][fn['acc']]['tax']) > 1: return 0
-                if catlog['samples'][fn['acc']]['tax'][0] != '10090': return 0
-                
-            printe(' ')
+                if len(catlog['samples'][fn['acc']]['tax']) > 1: metadata['tax'] = 'mixed'
+                else: metadata['tax'] = catlog['samples'][fn['acc']]['tax'][0]
 
+            # extract sample information.
+            metadata['prefix'] = prefix
+            
+            # the manual configuration overwrites the machine-generated ones.
+            def get_props(s_name, s_sample, config):
+                
+                props_items = ['name', 'tissue', 'genetic', 'strain', 'sort', 'expm', 'age', 'sex']
+                pdict = {}
+                error_code = 0
+                
+                for x in props_items:
+                    if s_name not in config.keys():
+                        error_code = 1
+                        break
+                    if s_sample not in config[s_name].keys():
+                        error_code = 2
+                        break
+
+                    if x in config[s_name][s_sample].keys():
+                        pdict[x] = config[s_name][s_sample][x]
+                        continue
+                    
+                    if '*' in config[s_name].keys():
+                        if x in config[s_name]['*'].keys():
+                            pdict[x] = config[s_name]['*'][x]
+                            continue
+                    
+                    if '*' in config.keys():
+                        if '*' in config['*'].keys():
+                            if x in config['*']['*'].keys():
+                                pdict[x] = config['*']['*'][x]
+                                continue
+                    
+                    error_code = 3
+                    break
+                
+                pdict['dataset'] = s_name.replace(str(s_acc) + '-', '').replace(str(s_acc), '')
+                return pdict, error_code
+            
+            # the machine-generated configs is stored in query/gse(gsm)/***.json, which
+            # is the json-formatted metadata given by llm ai model.
+                
             # here, we will produce the sample summary file if necessary
             # or extract information from the chat result.
             
@@ -322,11 +436,87 @@ def display(registry, n_row, show_status = False):
             elif fn['acc'].lower().startswith('gsm'):
                 atype = 'gsm'
                 acc = fn['acc'].lower().replace('gsm', '')
-            else: return 0
+            
+            else: # only check if manually given, then return
+                prop, e = get_props(s_name, prefix, manual)
+                if e != 0: return metadata
+                if 'strain' in prop.keys(): metadata['strain'] = prop['strain']
+                if 'sex' in prop.keys(): metadata['sex'] = prop['sex']
+                if 'tissue' in prop.keys(): metadata['tissue'] = prop['tissue']
+                if 'age' in prop.keys(): metadata['age'] = prop['age']
+                if 'expm' in prop.keys(): metadata['expm'] = prop['expm']
+                if 'sort' in prop.keys(): metadata['sort'] = prop['sort']
+                if 'genetic' in prop.keys(): metadata['genetic'] = prop['genetic']
+                if 'name' in prop.keys(): metadata['name'] = prop['name']
+                return metadata
 
-            print(prefix, f'{atype}:{acc}', sep = '\t', file = _f)
+            import json
 
-            import os
+            # set dstype
+            if os.path.exists(f'configs/dtype/{metadata["accession"].replace(":", "-")}.json'):
+                with open(f'configs/dtype/{metadata["accession"].replace(":", "-")}.json', 'r', encoding = 'utf-8') as fj:
+                    try:
+                        jobject = json.loads(fj.read())['samples']
+
+                        if atype == 'gsm':
+                            for xk in jobject.keys():
+                                if f'gsm{acc}' == xk.lower():
+                                    metadata['dstype'] = jobject[xk]
+                        elif atype == 'gse':
+                            evalstat = []
+                            for xk in jobject.keys():
+                                if jobject[xk] not in evalstat: evalstat += [jobject[xk]]
+                            metadata['dstype'] = ' '.join(evalstat).lower()
+                            
+                    except: pass
+
+            # set tissue
+            if os.path.exists(f'configs/tissue/{metadata["accession"].replace(":", "-")}.json'):
+                with open(f'configs/tissue/{metadata["accession"].replace(":", "-")}.json', 'r', encoding = 'utf-8') as fj:
+                    try:
+                        jobject = json.loads(fj.read())['samples']
+
+                        if atype == 'gsm':
+                            for xk in jobject.keys():
+                                if f'gsm{acc}' == xk.lower():
+                                    metadata['tissue'] = jobject[xk]
+                        elif atype == 'gse':
+                            evalstat = []
+                            for xk in jobject.keys():
+                                if jobject[xk].replace(' ', '.') not in evalstat: evalstat += [jobject[xk].replace(' ', '.')]
+                            metadata['tissue'] = ' '.join(evalstat).lower()
+                            
+                    except: pass
+
+            # set strain
+            if os.path.exists(f'configs/strain/{metadata["accession"].replace(":", "-")}.json'):
+                with open(f'configs/strain/{metadata["accession"].replace(":", "-")}.json', 'r', encoding = 'utf-8') as fj:
+                    try:
+                        jobject = json.loads(fj.read())['samples']
+
+                        if atype == 'gsm':
+                            for xk in jobject.keys():
+                                if f'gsm{acc}' == xk.lower():
+                                    metadata['strain'] = jobject[xk]
+                        elif atype == 'gse':
+                            evalstat = []
+                            for xk in jobject.keys():
+                                if jobject[xk].replace(' ', '.') not in evalstat: evalstat += [jobject[xk].replace(' ', '.')]
+                            metadata['strain'] = ' '.join(evalstat).lower()
+                            
+                    except: pass
+                        
+            prop, e = get_props(s_name, prefix, manual)
+            if e == 0:
+                if 'strain' in prop.keys(): metadata['strain'] = prop['strain']
+                if 'sex' in prop.keys(): metadata['sex'] = prop['sex']
+                if 'tissue' in prop.keys(): metadata['tissue'] = prop['tissue']
+                if 'age' in prop.keys(): metadata['age'] = prop['age']
+                if 'expm' in prop.keys(): metadata['expm'] = prop['expm']
+                if 'sort' in prop.keys(): metadata['sort'] = prop['sort']
+                if 'genetic' in prop.keys(): metadata['genetic'] = prop['genetic']
+                if 'name' in prop.keys(): metadata['name'] = prop['name']
+
             import textwrap
             
             # dump the database into raw text files.
@@ -431,51 +621,148 @@ def display(registry, n_row, show_status = False):
                         print(f'This series contains {len(catlog["samples"])} samples in total.', file = fw)
                         print(f'In this record, only one sample is given. But you are able to extract information with this only.', file = fw)
             
-            return 1
+            return metadata
 
-        if len(n_filtered_h5) + len(n_raw_h5) + len(n_mtx_features) + len(n_mtx_genes) + len(n_undef_h5) == 0:
-            printe(' no available data.')
-            print()
+        def printinfo(metas):
+            if len(metas) == 0: return
+            _acc = _table_prev.loc[_table_prev['accession'] == metas[0]['accession'], :]
+            sample_id = len(_acc)
+            for m in metas:
+                
+                m2 = m.copy()
+                if _table_prev is not None:
+                    _row = _acc.loc[_acc['prefix'] == (m['prefix'] if len(m['prefix']) > 0 else 'nan'), :]
+                    if len(_row) == 1:
+                        m2['encode'] = _row['encode'].tolist()[0]
+                    
+                    else: 
+                        sample_id += 1
+                        m2['encode'] = 's:' + str(sample_id)
+                        print(f'find new sample {m2["encode"]} for [{m["accession"]}/{m["prefix"]}')
+                
+                else: 
+                    sample_id += 1
+                    m2['encode'] = 's:' + str(sample_id)
+                    print(f'find new sample {m2["encode"]} for [{m["accession"]}/{m["prefix"]}')
+                
+                fmt = '{accession}\t{dataset}\t{sample}\t{dstype}\t{tax}\t' \
+                      '{dtype}\t{filtered}\t{selected}\t{encode}\t{name}\t{prefix}\t' \
+                      '{strain}\t{sex}\t{tissue}\t{age}\t{expm}\t{genetic}\t{sort}'
+                
+                print(fmt.format(**m2), file = _f)
+
+        # not even one available data for autoloading.
+        if len(n_h5) + len(n_mtx_features) + len(n_mtx_genes) == 0:
             continue
+
+        metas = []
+        id_root = 1
         
-        print()
-        n_available_ds += 1
+        h5r = 0; h5f = 0; h5o = 0
+        mtxzr = 0; mtxzf = 0; mtxzo = 0
+        mtxr = 0; mtxf = 0; mtxo = 0
         
-        if len(n_filtered_h5) > 0:
-            for fp in n_filtered_h5:
-                printe(formal_length('| ' + fp))
-                n_available_sample += printinfo(fp + 'filtered_', fcatlog)
-                print()
+        if len(n_h5) > 0:
+            for fp in n_h5:
+                meta = getinfo(fp, fcatlog, manual_config)
+                meta['encode'] = f's:{id_root}'
+                id_root += 1
+                meta['dtype'] = 'h5'
+                if 'raw_' in fp:
+                    meta['filtered'] = 'raw'
+                    h5r += 1
+                elif 'filtered_' in fp:
+                    meta['filtered'] = 'filt'
+                    h5f += 1
+                else: 
+                    meta['filtered'] = '?'
+                    h5o += 1
+                metas += [meta]
 
-        elif len(n_raw_h5) > 0:
-            for fp in n_raw_h5:
-                printe(formal_length('| ' + fp))
-                n_available_sample += printinfo(fp + 'raw_', fcatlog)
-                print()
+        if len(n_mtx_features) > 0:
+            for fp in n_mtx_features:
+                meta = getinfo(fp, fcatlog, manual_config)
+                meta['encode'] = f's:{id_root}'
+                id_root += 1
+                meta['dtype'] = 'mtxz'
+                if 'raw_' in fp: 
+                    meta['filtered'] = 'raw'
+                    mtxzr += 1
+                elif 'filtered_' in fp:
+                    meta['filtered'] = 'filt'
+                    mtxzf += 1
+                else:
+                    meta['filtered'] = '?'
+                    mtxzo += 1
+                metas += [meta]
 
-        elif len(n_mtx_features) + len(n_mtx_genes) > 0:
-            if len(n_mtx_features) > 0:
-                for fp in n_mtx_features:
-                    printe(formal_length('| ' + fp))
-                    n_available_sample += printinfo(fp + 'matrix.mtx', fcatlog)
-                    print()
+        if len(n_mtx_genes) > 0:
+            for fp in n_mtx_genes:
+                meta = getinfo(fp, fcatlog, manual_config)
+                meta['encode'] = f's:{id_root}'
+                id_root += 1
+                meta['dtype'] = 'mtx'
+                if 'raw_' in fp:
+                    meta['filtered'] = 'raw'
+                    mtxr += 1
+                elif 'filtered_' in fp:
+                    meta['filtered'] = 'filt'
+                    mtxf += 1
+                else: 
+                    meta['filtered'] = '?'
+                    mtxo += 1
+                metas += [meta]
 
-            if len(n_mtx_genes) > 0:
-                for fp in n_mtx_genes:
-                    printe(formal_length('| ' + fp))
-                    n_available_sample += printinfo(fp + 'matrix.mtx', fcatlog)
-                    print()
+        # finally, check the list of sample, and apply the precedence rule on which
+        # should be taken into the atlas.
+        # precedency rules
+        # h5f > h5r > mtx + mtxz （filtered > raw) > h5u
 
-        elif len(n_undef_h5) > 0:
-            for fp in n_undef_h5:
-                printe(formal_length('| ' + fp))
-                n_available_sample += printinfo(fp + '.h5', fcatlog)
-                print()
+        for i in range(len(metas)):
+            metas[i]['selected'] = '.'
+        
+        if h5f > 0:
+            for i in range(len(metas)):
+                if metas[i]['dtype'] == 'h5' and metas[i]['filtered'] == 'filt':
+                    metas[i]['selected'] = 'x'
+        
+        elif h5r > 0:
+            for i in range(len(metas)):
+                if metas[i]['dtype'] == 'h5' and metas[i]['filtered'] == 'raw':
+                    metas[i]['selected'] = 'x'
+                    
+        elif mtxzf + mtxf > 0:
+            for i in range(len(metas)):
+                if metas[i]['dtype'] in ['mtxz', 'mtx'] and metas[i]['filtered'] == 'filt':
+                    metas[i]['selected'] = 'x'
+                    
+        elif mtxzr + mtxr > 0:
+            for i in range(len(metas)):
+                if metas[i]['dtype'] in ['mtxz', 'mtx'] and metas[i]['filtered'] == 'raw':
+                    metas[i]['selected'] = 'x'
 
+        elif h5o > 0:
+            for i in range(len(metas)):
+                if metas[i]['dtype'] == 'h5' and metas[i]['filtered'] == '?':
+                    metas[i]['selected'] = 'x'
+
+        elif mtxzo + mtxo > 0:
+            for i in range(len(metas)):
+                if metas[i]['dtype'] in ['mtxz', 'mtx'] and metas[i]['filtered'] == '?':
+                    metas[i]['selected'] = 'x'
+
+        # only murine dataset.
+        for i in range(len(metas)):
+            if metas[i]['tax'] != '10090':
+                metas[i]['selected'] = '.'
+
+        printinfo(metas)
+        for i in range(len(metas)):
+            if metas[i]['selected'] == 'x':
+                n_available_sample += 1
         pass
 
-    print()
     print(cyan('Summary: '))
     print(cyan('  Total datasets:'), red(str(n_total)))
-    print(cyan('  Avaiable datasets for autoloading:'), red(str(n_available_ds)))
     print(cyan('  Available samples:'), red(str(n_available_sample)))
+    

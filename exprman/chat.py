@@ -8,7 +8,7 @@ from ansi import fore_green, fore_cyan, ansi_reset
 
 # model = 'deepseek-r1-distill-qwen-14b'
 # model = 'deepseek-r1-distill-llama-8b'
-model = 'deepseek-ai/DeepSeek-R1'
+model = 'Pro/deepseek-ai/DeepSeek-R1'
 apikey = 'sk-tydjnkebvgdqwipaiowmuqtpneahwqziyjaqbqzdwrmobngq'
 
 # client = openai.OpenAI(base_url = "http://127.0.0.1:1234/v1", api_key = "lm-studio")
@@ -40,7 +40,8 @@ session_system = [{
         'You should give your result in JSON format according to the given JSON schema. '
         'You should give your result entirely in English. '
         'You should not try to fix typos, just leave it as it is. '
-        'Do not contain anything other than ["accession", "dtype", "strain", "tissue", "genotype", "age", "sex", "sort"] in your output JSON.'
+        'Do not contain anything other than ["accession", "dtype", "strain", "tissue", '
+        '"genotype", "age", "sex", "sort"] in your output JSON.'
 }]
 
 fprefix = []
@@ -81,22 +82,27 @@ preface = [
     '(3) intermediate, with "int". You should not try to alter the marker name, just stick to '
     'what is given exactly in the text. You need not to check whether this protein name is '
     'valid, because these naming criteria are constantly changing. '
-    # 'In most cases, the sorting criteria is stated using "[{marker}{+,-,int}]. '
-    # 'and may be written without spacing. The status goes after the marker name, for example, '
-    # 'CD3+CD4-CD8- indicates positive for CD3, while negative for CD4 and CD8. '
+    'In most cases, the sorting criteria is stated using "[{marker}{+,-,int}]. '
+    'and may be written without spacing. The status goes after the marker name, for example, '
+    '"CD3+CD4-CD8-" indicates positive for CD3, while negative for CD4 and CD8. '
     'The JSON schema requires you to give the pair of marker names and its status in a JSON '
     'list. Surface marker names should be lowercased word. If no sorting is applied, leave this '
-    'field blank. (field "sort")',
+    'field as an empty array. If this library came from several sorted samples, we should write '
+    'all sorting criteria in the array. (field "sort")',
 
     'The animal taken in the experiment may be wild type, or genetically modified.'
     'Transgenic strains should be notated with tg(gene_symbol) where "gene_symbol" represent '
     'lowercased gene name, mutants should be notated with gene_symbol^(mutation_status) '
     'and "mutation_status" may describe coding alternations (for example "k18s") or'
     'allele heterozygosity (for example -/-, +/-). Do not try to alter the gene name, just '
-    'turn them to lowercase of what stated exactly in the text. (field "genotype")',
+    'turn them to lowercase of what stated exactly in the text. If there is no genotypic '
+    'modifications (or wild type), just place an "wt" here. (field "genotype")',
 
     'The age (field "age") of the animal should be written in units of weeks. We assume a month '
-    'to be 4 weeks. Embryonic age should be written exactly as the original text. '
+    'to be 4 weeks. Embryonic or postnatal age (for example, "E2.5" or "P0.5" should be written '
+    'exactly as the original text starting with E or P. If not embryonic or postnatal age, we '
+    'will just use a integer value (ceiling) of the actual age in weeks. In case there is a range '
+    'of age, we state the starting and ending of the range in this format, and separate them with ":". '
     'If not specified, place "0" as age.',
 
     'The tissue source of the sample should be abbreviated using my nomenclature. We will abbreviate '
@@ -277,7 +283,7 @@ for prefx in fprefix:
 
     import json
     # this content may not be proper json. we just write them down.
-    with open(f'query/{acctype}/{acc}.json', 'w') as fo:
+    with open(f'query/{acctype}/{acc}.raw', 'w') as fo:
         fo.write(raw_content)
         print(f'  (saved) - {acctype}:{acc}')
 

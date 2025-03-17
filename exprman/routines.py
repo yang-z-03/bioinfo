@@ -6,14 +6,119 @@ from scipy.sparse import csr_matrix
 import pandas as pd
 import scanpy as sc
 import numpy as np
+import pickle
 
 gtable = pd.read_table('genome.tsv')
+REFINE_FINDER = False
 
-def compile_mtx(src, prefix, props, clog: textio):
+# we will construct the gene table for ensembl id and gene name alias at once during
+# the startup process of this script. then we will be able to directly calls for
+# its ugene id in all the next times.
+
+if os.path.exists('configs/ensembl-finder.pkl') and os.path.exists('configs/name-finder.pkl'):
+    with open('configs/ensembl-finder.pkl', 'rb') as fens:
+        _ensembl_finder = pickle.load(fens)
+    with open('configs/name-finder.pkl', 'rb') as fname:
+        _name_finder = pickle.load(fname)
+        
+    print(f'Reading ensembl finder dictionary ... {len(_ensembl_finder)}')
+    print(f'Reading gene symbol finder dictionary ... {len(_name_finder)}')
+    
+else:
+    _ensembl_list = gtable[['ensembl']].values.transpose()[0].tolist()
+    _ensembl_finder = {}
+    
+    _name_list = gtable[['gene']].values.transpose()[0].tolist()
+    _name_finder = {}
+    
+    _alias_list = gtable[['alias']].values.transpose()[0].tolist()
+    _duplicates = []
+    _alias_finder = {}
+    for x in range(len(_alias_list)):
+        alias = _alias_list[x]
+        if not isinstance(alias, str): continue
+        if len(alias) > 0:
+            spl = alias.split(';')
+            for y in spl:
+                if y not in _alias_finder.keys():
+                    _alias_finder[y] = x
+                elif y not in _duplicates:
+                    _duplicates += [y]
+    
+    for x in _duplicates:
+        del _alias_finder[x]
+    
+    for k in _alias_finder.keys():
+        _name_finder[k] = 'g' + str(1 + _alias_finder[k])
+    
+    for i in range(len(_name_list)):
+        _name_finder[_name_list[i]] = 'g' + str(1 + i)
+    
+    for i in range(len(_ensembl_list)):
+        _ensembl_finder[_ensembl_list[i]] = 'g' + str(1 + i)
+        
+    print(f'Constructing ensembl finder dictionary ... {len(_ensembl_finder)}')
+    print(f'Constructing gene symbol finder dictionary ... {len(_name_finder)}')
+
+print()
+
+def compile_mtx(src, prefix, props, clog: textio, raw = False):
 
     # scanpy can only recognize mtx in non-gzipped format. so we should
     # decompress them if possible.
+
+    gpath = f'{src}/{prefix}genes.tsv.gz' if os.path.exists(f'{src}/{prefix}genes.tsv.gz') \
+            else f'{src}/{prefix}genes.tsv'
     
+    if not os.path.exists(gpath):
+        return None, ['mismatch between assumed data type and actual file?', gpath]
+    
+    gfile = pd.read_table(gpath, header = None)
+    
+    if len(gfile.columns) == 3:
+        clog.writelines([
+            '    [i] there are 3 columns in the genes.tsv.gz\n',
+            '        [1] ' + str(gfile[0].tolist()[0:5]) + '\n',
+            '        [2] ' + str(gfile[1].tolist()[0:5]) + '\n',
+            '        [3] ' + str(gfile[2].tolist()[0:5]) + '\n',
+            '        redirecting from [mtx] to [mtxz] ... \n',
+        ])
+        os.rename(gpath, gpath.replace('genes.tsv', 'features.tsv'))
+        return compile_mtxz(src, prefix, props, clog, raw)
+    
+    elif len(gfile.columns) == 2:
+        
+        # check the format, the first col should be ENSMUSG index, and the
+        # second should be gene name.
+        
+        clog.writelines([
+            '    [i] there are 2 columns in the genes.tsv.gz\n',
+            '        [1] ' + str(gfile[0].tolist()[0:5]) + '\n',
+            '        [2] ' + str(gfile[1].tolist()[0:5]) + '\n'
+        ])
+
+        # refine our finders:
+
+        if REFINE_FINDER:
+            ensembls = gfile[0].tolist()
+            names = gfile[0].tolist()
+            for ens, nm in zip(ensembls, names):
+                if (nm not in _name_finder.keys()) and (ens in _ensembl_finder.keys()):
+                    _name_finder[nm] = _ensembl_finder[ens]
+    
+            with open('configs/ensembl-finder.pkl', 'wb') as fens:
+                pickle.dump(_ensembl_finder, fens)
+            with open('configs/name-finder.pkl', 'wb') as fname:
+                pickle.dump(_name_finder, fname)
+            
+        pass
+    
+    else:
+        return None, [
+            f'illegal genes.tsv', 
+            f'{len(gfile.columns)} columns is observed.'
+        ] + [f'[{_x + 1}] ' + str(gfile[_x].tolist()[0:5]) for _x in range(len(gfile.columns))]
+
     from sh import gunzip
 
     if os.path.exists(f'{src}/{prefix}matrix.mtx.gz'):
@@ -23,16 +128,19 @@ def compile_mtx(src, prefix, props, clog: textio):
     if os.path.exists(f'{src}/{prefix}barcodes.tsv.gz'):
         gunzip(f'{src}/{prefix}barcodes.tsv.gz')
 
-    adata = sc.read_10x_mtx(
-        src, var_names = 'gene_ids',
-        gex_only = True, make_unique = True,
-        prefix = prefix
-    )
+    try:
+        adata = sc.read_10x_mtx(
+            src, var_names = 'gene_ids',
+            gex_only = True, make_unique = True,
+            prefix = prefix
+        )
+    except:
+        return None, ['reading mtx error.']
 
-    final = process_matrix(props, clog, adata)
+    final = process_matrix(props, clog, adata, force_filter = raw)
     
     del adata
-    return final
+    return final, []
 
 
 def process_matrix(props, clog, adata, force_filter = False):
@@ -63,12 +171,17 @@ def process_matrix(props, clog, adata, force_filter = False):
     # in these double species reference, the 'gene_ids' should be 'mm10_ENSMUSG...'
     # or just name of the genes.
 
-    do_start_with_mm10 = 0
-    do_ensembl = 0
+    do_start_with_mm10 = False
+    do_ensembl = False
     for gn in gname:
-        if gn.startswith('ENSMUSG'): do_ensembl += 1
+        if gn.startswith('ENSMUSG'):
+            do_ensembl = True
+            continue
+    
     for gn in gname:
-        if '_ENSMUSG' in gn: do_start_with_mm10 += 1
+        if '_ENSMUSG' in gn: 
+            do_start_with_mm10 += True
+            continue
     
     if do_start_with_mm10 > 0:
         gname_copy = []
@@ -77,43 +190,22 @@ def process_matrix(props, clog, adata, force_filter = False):
             else: gname_copy += [gn]
         gname = gname_copy
     
-    finder = gtable[['ensembl' if (do_start_with_mm10 + do_ensembl > 0) else 'gene']] \
-        .values.transpose()[0].tolist()
     not_in_list = []
 
-    alias_table = {}
-    # make the name alias table.
-    if (do_start_with_mm10 + do_ensembl) == 0:
+    finder = {}
+    if do_start_with_mm10 or do_ensembl:
+        finder = _ensembl_finder
+    else: finder = _name_finder
 
-        finder_alias = gtable[['alias']].values.transpose()[0].tolist()
-        duplicates = []
-
-        for x in range(len(finder_alias)):
-            alias = finder_alias[x]
-            if not isinstance(alias, str): continue
-            if len(alias) > 0:
-                spl = alias.split(';')
-                for y in spl:
-                    if y not in alias_table.keys():
-                        alias_table[y] = x
-                    elif y not in duplicates:
-                        duplicates += [y]
-        
-        for x in duplicates:
-            del alias_table[x]
-
+    keys = finder.keys()
     for x in gname:
-        if x in finder:
-            gmask += [True]
-            names += ['g' + str(finder.index(x) + 1)]
-        elif x in alias_table.keys(): # if using ensembl, this is an empty table.
-            gmask += [True]
-            names += ['g' + str(alias_table[x] + 1)]
+        if x in keys:
+            gmask.append(True)
+            names.append(finder[x])
         else:
-            gmask += [False]
-            not_in_list += [x]
+            gmask.append(False)
+            not_in_list.append(x)
     
-
     clog.writelines([
         f'    [i] {len(not_in_list)} genes (out of {len(gname)}) not in the reference gene list ({len(finder)}) \n',
         f'    [i] total {len(names)} genes mapped. {len(np.unique(names))} unique genes. \n'
@@ -148,25 +240,93 @@ def process_matrix(props, clog, adata, force_filter = False):
     return final
 
 
-def compile_mtxz(src, prefix, props, clog: textio):
-    
-    adata = sc.read_10x_mtx(
-        src, var_names = 'gene_ids',
-        gex_only = True, make_unique = True,
-        prefix = prefix
-    )
+def compile_mtxz(src, prefix, props, clog: textio, raw = False):
 
-    final = process_matrix(props, clog, adata)
+    gpath = f'{src}/{prefix}features.tsv.gz' if os.path.exists(f'{src}/{prefix}features.tsv.gz') \
+            else f'{src}/{prefix}features.tsv'
+    if not os.path.exists(gpath):
+        return None, ['mismatch between assumed data type and actual file?', gpath]
+    gfile = pd.read_table(gpath, header = None)
+    
+    if len(gfile.columns) == 3:
+        clog.writelines([
+            '    [i] there are 3 columns in the features.tsv\n',
+            '        [1] ' + str(gfile[0].tolist()[0:5]) + '\n',
+            '        [2] ' + str(gfile[1].tolist()[0:5]) + '\n',
+            '        [3] ' + str(gfile[2].tolist()[0:5]) + '\n',
+        ])
+
+        # refine our finders:
+        if REFINE_FINDER:
+            ensembls = gfile[0].tolist()
+            names = gfile[0].tolist()
+            for ens, nm in zip(ensembls, names):
+                if (nm not in _name_finder.keys()) and (ens in _ensembl_finder.keys()):
+                    _name_finder[nm] = _ensembl_finder[ens]
+            
+            with open('configs/ensembl-finder.pkl', 'wb') as fens:
+                pickle.dump(_ensembl_finder, fens)
+            with open('configs/name-finder.pkl', 'wb') as fname:
+                pickle.dump(_name_finder, fname)
+        
+        pass
+
+    elif len(gfile.columns) == 2:
+        
+        # check the format, the first col should be ENSMUSG index, and the
+        # second should be gene name.
+        
+        clog.writelines([
+            '    [i] there are 2 columns in the features.tsv\n',
+            '        [1] ' + str(gfile[0].tolist()[0:5]) + '\n',
+            '        [2] ' + str(gfile[1].tolist()[0:5]) + '\n',
+            '        redirecting from [mtxz] to [mtx] ... \n',
+        ])
+        os.rename(gpath, gpath.replace('features.tsv', 'genes.tsv'))
+        return compile_mtx(src, prefix, props, clog, raw)
+
+    else:
+        return None, [
+            f'illegal features.tsv', 
+            f'{len(gfile.columns)} columns is observed.'
+        ] + [f'[{_x + 1}] ' + str(gfile[_x].tolist()[0:5]) for _x in range(len(gfile.columns))]
+
+    from sh import gzip
+
+    if os.path.exists(f'{src}/{prefix}matrix.mtx'):
+        gzip(f'{src}/{prefix}matrix.mtx')
+    if os.path.exists(f'{src}/{prefix}features.tsv'):
+        gzip(f'{src}/{prefix}features.tsv')
+    if os.path.exists(f'{src}/{prefix}barcodes.tsv'):
+        gzip(f'{src}/{prefix}barcodes.tsv')
+        
+    try:
+        adata = sc.read_10x_mtx(
+            src, var_names = 'gene_ids',
+            gex_only = True, make_unique = True,
+            prefix = prefix
+        )
+    except:
+        return None, ['read mtxz error.']
+
+    final = process_matrix(props, clog, adata, force_filter = raw)
     
     del adata
-    return final
+    return final, []
 
-def compile_h5r(src, h5name, props, clog: textio):
+def compile_h5(src, h5name, props, clog: textio, raw = False):
 
-    adata = sc.read_10x_h5(
-        f'{src}/{h5name}',
-        gex_only = True
-    )
+    try:
+        adata = sc.read_10x_h5(
+            f'{src}/{h5name}',
+            gex_only = True
+        )
+        
+        if 'gene_ids' not in adata.var.columns:
+            del adata
+            return None, ['there is no "gene_ids" column in variables metadata.']
+    except:
+        return None, ['read h5 error']
 
     lst = adata.var['gene_ids'].tolist()
     lsstab = [y.split('.')[0] for y in lst]
@@ -176,28 +336,7 @@ def compile_h5r(src, h5name, props, clog: textio):
     adata.var_names_make_unique()
     adata.obs_names_make_unique()
 
-    final = process_matrix(props, clog, adata, force_filter = True)
+    final = process_matrix(props, clog, adata, force_filter = raw)
     
     del adata
-    return final
-
-
-def compile_h5f(src, h5name, props, clog: textio):
-    
-    adata = sc.read_10x_h5(
-        f'{src}/{h5name}',
-        gex_only = True
-    )
-
-    lst = adata.var['gene_ids'].tolist()
-    lsstab = [y.split('.')[0] for y in lst]
-    adata.var_names = lsstab
-    del adata.var
-    
-    adata.var_names_make_unique()
-    adata.obs_names_make_unique()
-
-    final = process_matrix(props, clog, adata, force_filter = False)
-    
-    del adata
-    return final
+    return final, []

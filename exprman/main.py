@@ -17,6 +17,8 @@ parser.add_argument('-t', dest = 'task', default = 'list', type = str, help = 'd
 # clean options
 parser.add_argument('--clean', dest = 'clean', default = '', type = str, help = 'which partition to clean up')
 parser.add_argument('--accession', dest = 'acc', default = '', type = str, help = 'dataset accession to clean up')
+parser.add_argument('--from', dest = 'ifrom', default = 9999, type = int, help = 'dataset accession from index to clean up')
+parser.add_argument('--to', dest = 'ito', default = 9999, type = int, help = 'dataset accession to index to clean up')
 parser.add_argument('--dry', dest = 'dry', action = 'store_true', default = False, help = 'dry run the cleaning process')
 
 parser.add_argument('--status', action = 'store_true', default = False, help = 'print status message')
@@ -63,6 +65,11 @@ for line in register:
 
 if has_warn > 0: print('')
 
+# filter dataset.
+reg['type'] = reg['type'][opt.ifrom:opt.ito]
+reg['accession'] = reg['accession'][opt.ifrom:opt.ito]
+reg['name'] = reg['name'][opt.ifrom:opt.ito]
+
 # length of registered datasets.
 lenreg = len(reg['name'])
 
@@ -96,19 +103,7 @@ elif opt.task == 'merge':
 
 elif opt.task == 'sample':
     from sample import display
-    if opt.acc != '':
-        dsname = 'undetermined'
-        searchs = [x + ':' + y for x, y in zip(reg['type'], reg['accession'])]
-        if opt.acc not in searchs:
-            error('unrecognized accession number. check configs/register for details')
-        else: 
-            display({
-                'type': [reg['type'][searchs.index(opt.acc)]],
-                'accession': [reg['accession'][searchs.index(opt.acc)]],
-                'name': [reg['name'][searchs.index(opt.acc)]]
-            }, opt.nrow, opt.status)
-    
-    else: display(reg, opt.nrow, opt.status)
+    display(reg, opt.nrow, opt.status)
 
 elif opt.task == 'chat':
     import chat
@@ -116,70 +111,77 @@ elif opt.task == 'chat':
 elif opt.task == 'clean':
     searchs = [x + ':' + y for x, y in zip(reg['type'], reg['accession'])]
     names = reg['name']
-    dsname = 'undetermined'
-    if opt.acc not in searchs:
+    
+    dsnames = names
+    
+    if opt.acc in searchs: 
+        dsnames = [names[searchs.index(opt.acc)]]
+        info(f'cleaning up [{opt.clean}] partion for dataset [{opt.acc}] {dsnames[0]}')
+    else: pass
+
+    if len(dsnames) == 0:
         error('unrecognized accession number. check configs/register for details')
-    else: 
-        dsname = names[searchs.index(opt.acc)]
-        info(f'cleaning up [{opt.clean}] partion for dataset [{opt.acc}] {dsname}')
+        
+    for dsname in dsnames:
+        
+        if opt.clean in ['qc', 'compile', 'download']:
 
-    if opt.clean in ['qc', 'compile', 'download']:
-
-        for fname in os.listdir('processed/graphs/detections'):
-            if fname.startswith(dsname + '.'):
-                if not opt.dry: os.remove('processed/graphs/detections/' + fname)
-                warning(f'removed processed/graphs/detections/{fname}')
+            import shutil
+            for fname in os.listdir('processed/graphs/detections'):
+                if fname == dsname.lower():
+                    if not opt.dry: shutil.rmtree('processed/graphs/detections/' + fname.lower())
+                    warning(f'removed processed/graphs/detections/{fname.lower()}/*')
+            
+            for fname in os.listdir('processed/graphs/mito'):
+                if fname == dsname.lower():
+                    if not opt.dry: shutil.rmtree('processed/graphs/mito/' + fname.lower())
+                    warning(f'removed processed/graphs/mito/{fname.lower()}/*')
+            
+            for fname in os.listdir('processed/hvg'):
+                if fname.startswith(dsname + '.'):
+                    if not opt.dry: os.remove('processed/hvg/' + fname)
+                    warning(f'removed processed/hvg/{fname}')
+            
+            for fname in os.listdir('processed/logs/qc'):
+                if fname.startswith(dsname + '.qclog'):
+                    if not opt.dry: os.remove('processed/logs/qc/' + fname)
+                    warning(f'removed processed/logs/{fname}')
+            
+            for fname in os.listdir('processed/metrics'):
+                if fname.startswith(dsname + '.'):
+                    if not opt.dry: os.remove('processed/metrics/' + fname)
+                    warning(f'removed processed/metrics/{fname}')
+            
+            for fname in os.listdir('processed/qc'):
+                if fname.startswith(dsname + '.'):
+                    if not opt.dry: os.remove('processed/qc/' + fname)
+                    warning(f'removed processed/qc/{fname}')
         
-        for fname in os.listdir('processed/graphs/mito'):
-            if fname.startswith(dsname + '.'):
-                if not opt.dry: os.remove('processed/graphs/mito/' + fname)
-                warning(f'removed processed/graphs/mito/{fname}')
-        
-        for fname in os.listdir('processed/hvg'):
-            if fname.startswith(dsname + '.'):
-                if not opt.dry: os.remove('processed/hvg/' + fname)
-                warning(f'removed processed/hvg/{fname}')
-        
-        for fname in os.listdir('processed/logs'):
-            if fname.startswith(dsname + '.qclog'):
-                if not opt.dry: os.remove('processed/logs/' + fname)
-                warning(f'removed processed/logs/{fname}')
-        
-        for fname in os.listdir('processed/metrics'):
-            if fname.startswith(dsname + '.'):
-                if not opt.dry: os.remove('processed/metrics/' + fname)
-                warning(f'removed processed/metrics/{fname}')
-        
-        for fname in os.listdir('processed/qc'):
-            if fname.startswith(dsname + '.'):
-                if not opt.dry: os.remove('processed/qc/' + fname)
-                warning(f'removed processed/qc/{fname}')
+        if opt.clean in ['compile', 'download']:
     
-    if opt.clean in ['compile', 'download']:
-
-        for fname in os.listdir('adata'):
-            if fname.startswith(dsname + '.'):
-                if not opt.dry: os.remove('adata/' + fname)
-                warning(f'unlinked adata/{fname}')
+            for fname in os.listdir('adata'):
+                if fname.startswith(dsname + '.'):
+                    if not opt.dry: os.remove('adata/' + fname)
+                    warning(f'unlinked adata/{fname}')
+            
+            for fname in os.listdir('data'):
+                if fname == dsname:
+                    if os.path.exists(f'data/{fname}/data.h5ad'):
+                        if not opt.dry: os.remove(f'data/{fname}/data.h5ad')
+                        warning(f'removed data/{fname}/data.h5ad')
         
-        for fname in os.listdir('data'):
-            if fname == dsname:
-                if os.path.exists(f'data/{fname}/data.h5ad'):
-                    if not opt.dry: os.remove(f'data/{fname}/data.h5ad')
-                    warning(f'removed data/{fname}/data.h5ad')
-    
-    if opt.clean in ['download']:
-        
-        for fname in os.listdir('data'):
-            if fname.startswith(dsname):
-                if os.path.exists(f'data/{fname}/src'):
-                    if not opt.dry: os.remove(f'data/{fname}/src')
-                    warning(f'unlinked data/{fname}/src')
-        
-        for fname in os.listdir('src'):
-            if fname == dsname:
-                for f in os.listdir('src/' + fname):
-                    if not opt.dry: os.remove(f'src/{fname}/{f}')
-                    warning(f'removed src/{fname}/{f}')
+        if opt.clean in ['download']:
+            
+            for fname in os.listdir('data'):
+                if fname.startswith(dsname):
+                    if os.path.exists(f'data/{fname}/src'):
+                        if not opt.dry: os.remove(f'data/{fname}/src')
+                        warning(f'unlinked data/{fname}/src')
+            
+            for fname in os.listdir('src'):
+                if fname == dsname:
+                    for f in os.listdir('src/' + fname):
+                        if not opt.dry: os.remove(f'src/{fname}/{f}')
+                        warning(f'removed src/{fname}/{f}')
 
 print('')
