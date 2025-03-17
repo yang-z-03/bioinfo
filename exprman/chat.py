@@ -82,12 +82,13 @@ preface = [
     '(3) intermediate, with "int". You should not try to alter the marker name, just stick to '
     'what is given exactly in the text. You need not to check whether this protein name is '
     'valid, because these naming criteria are constantly changing. '
-    # 'In most cases, the sorting criteria is stated using "[{marker}{+,-,int}]. '
-    # 'and may be written without spacing. The status goes after the marker name, for example, '
-    # 'CD3+CD4-CD8- indicates positive for CD3, while negative for CD4 and CD8. '
+    'In most cases, the sorting criteria is stated using "[{marker}{+,-,int}]. '
+    'and may be written without spacing. The status goes after the marker name, for example, '
+    '"CD3+CD4-CD8-" indicates positive for CD3, while negative for CD4 and CD8. '
     'The JSON schema requires you to give the pair of marker names and its status in a JSON '
     'list. Surface marker names should be lowercased word. If no sorting is applied, leave this '
-    'field blank. (field "sort")',
+    'field as an empty array. If this library came from several sorted samples, we should write '
+    'all sorting criteria in the array. (field "sort")',
 
     'The animal taken in the experiment may be wild type, or genetically modified.'
     'Transgenic strains should be notated with tg(gene_symbol) where "gene_symbol" represent '
@@ -98,7 +99,10 @@ preface = [
     'modifications (or wild type), just place an "wt" here. (field "genotype")',
 
     'The age (field "age") of the animal should be written in units of weeks. We assume a month '
-    'to be 4 weeks. Embryonic age should be written exactly as the original text. '
+    'to be 4 weeks. Embryonic or postnatal age (for example, "E2.5" or "P0.5" should be written '
+    'exactly as the original text starting with E or P. If not embryonic or postnatal age, we '
+    'will just use a integer value (ceiling) of the actual age in weeks. In case there is a range '
+    'of age, we state the starting and ending of the range in this format, and separate them with ":". '
     'If not specified, place "0" as age.',
 
     'The tissue source of the sample should be abbreviated using my nomenclature. We will abbreviate '
@@ -279,7 +283,7 @@ for prefx in fprefix:
 
     import json
     # this content may not be proper json. we just write them down.
-    with open(f'query/{acctype}/{acc}.json', 'w') as fo:
+    with open(f'query/{acctype}/{acc}.raw', 'w') as fo:
         fo.write(raw_content)
         print(f'  (saved) - {acctype}:{acc}')
 

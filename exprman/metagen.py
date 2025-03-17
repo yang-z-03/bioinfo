@@ -26,9 +26,7 @@ def status_dtype(registry):
         
         n_mtx_genes = 0
         n_mtx_features = 0
-        n_raw_h5 = 0
-        n_filtered_h5 = 0
-        n_undef_h5 = 0
+        n_h5 = 0
 
         for x in visible:
             if x.endswith('matrix.mtx') or x.endswith('matrix.mtx.gz'):
@@ -39,21 +37,15 @@ def status_dtype(registry):
                 elif (root + 'features.tsv') in visible or (root + 'features.tsv.gz') in visible:
                     n_mtx_features += 1
                     continue
-            elif (x.endswith('.h5') or x.endswith('.h5.gz')) and '_raw_' in x:
-                n_raw_h5 += 1
-            elif (x.endswith('.h5') or x.endswith('.h5.gz')) and '_filtered_' in x:
-                n_filtered_h5 += 1
             elif (x.endswith('.h5') or x.endswith('.h5.gz')):
-                n_undef_h5 += 1
+                n_h5 += 1
         
         qstr = f'mtx:{n_mtx_genes} ' if n_mtx_genes > 0 else ''
         qstr += f'mtxz:{n_mtx_features} ' if n_mtx_features > 0 else ''
-        qstr += f'h5r:{n_raw_h5} ' if n_raw_h5 > 0 else ''
-        qstr += f'h5f:{n_filtered_h5} ' if n_filtered_h5 > 0 else ''
-        qstr += f'h5u:{n_undef_h5}' if n_undef_h5 > 0 else ''
+        qstr += f'h5:{n_h5}' if n_h5 > 0 else ''
         qstr = qstr.strip()
 
-        if n_mtx_genes + n_mtx_features + n_raw_h5 + n_filtered_h5 + n_undef_h5 > 0: stat += [qstr]
+        if n_mtx_genes + n_mtx_features + n_h5 > 0: stat += [qstr]
         elif len(visible) > 0: stat += ['unknown']
         else: stat += ['empty']
     
@@ -157,9 +149,7 @@ def display(registry, n_row, show_status = False):
         
         n_mtx_genes = []
         n_mtx_features = []
-        n_raw_h5 = []
-        n_filtered_h5 = []
-        n_undef_h5 = []
+        n_h5 = []
         unrecog = []
         removed = []
 
@@ -180,12 +170,8 @@ def display(registry, n_row, show_status = False):
                     if (root + 'barcodes.tsv') in visible: removed.append(root + 'barcodes.tsv')
                     if (root + 'barcodes.tsv.gz') in visible: removed.append(root + 'barcodes.tsv.gz')
                     continue
-            elif (x.endswith('.h5') or x.endswith('.h5.gz')) and '_raw_' in x:
-                n_raw_h5 += [x.replace('raw_feature_bc_matrix.h5.gz', '').replace('raw_feature_bc_matrix.h5', '')]
-            elif (x.endswith('.h5') or x.endswith('.h5.gz')) and '_filtered_' in x:
-                n_filtered_h5 += [x.replace('filtered_feature_bc_matrix.h5.gz', '').replace('filtered_feature_bc_matrix.h5', '')]
             elif (x.endswith('.h5') or x.endswith('.h5.gz')):
-                n_undef_h5 += [x.replace('.h5.gz', '').replace('.h5', '')]
+                n_h5 += [x.replace('.h5.gz', '').replace('.h5', '')]
             else: unrecog += [x]
         
         for x in removed:
@@ -210,15 +196,8 @@ def display(registry, n_row, show_status = False):
                 added_lines += [f'    sample {samp} [mtx]'] + default_props
             for samp in n_mtx_features:
                 added_lines += [f'    sample {samp} [mtxz]'] + default_props
-            
-            if len(n_filtered_h5) > 0:
-                for samp in n_filtered_h5:
-                    added_lines += [f'    sample {samp} [h5f]'] + default_props
-            else:
-                for samp in n_raw_h5:
-                    added_lines += [f'    sample {samp} [h5r]'] + default_props
-                for samp in n_undef_h5:
-                    added_lines += [f'    sample {samp} [h5u]'] + default_props
+            for samp in n_h5:
+                added_lines += [f'    sample {samp} [h5u]'] + default_props
             
             for files in unrecog:
                 added_lines += [f'    unrecog {files}']
