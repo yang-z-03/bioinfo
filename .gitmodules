@@ -1,0 +1,6 @@
+[submodule "packages/exprmat"]
+	path = packages/exprmat
+	url = https://github.com/yang-z-03/exprmat.git
+[submodule "packages/scalign"]
+	path = packages/scalign
+	url = https://github.com/yang-z-03/scalign.git
