@@ -158,28 +158,18 @@ def display(registry, n_row, show_status = False):
                     retry = 30
                     for xretry in range(retry):
 
-                        # def prog(current, total, width = 40):
-                        #     print_replace(
-                        #         common_length(f'{(100 * current / total):.1f}% [{xretry}] ', 10) +
-                        #         common_length(f'{fname}', 40)
-                        #     )
+                        def prog(current, total, width = 40):
+                            print_replace(
+                                common_length(f'{(100 * current / total):.1f}% [{xretry}] ', 10) +
+                                common_length(f'{fname}', 40)
+                            )
 
                         try:
                             # try to format the http download link ...
                             httplink = f'https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE{acc}&format=file&file={fname}'
                             # wget.download(supp, f'src/{name}/{fname}', bar = prog)
-                            # wget.download(httplink, f'src/{name}/{fname}', bar = prog)
+                            wget.download(httplink, f'src/{name}/{fname}', bar = prog)
                             
-                            # aspera download link
-                            asperalink = f'anonftp@ftp.ncbi.nlm.nih.gov:/geo/series/GSE{acc[0:3]}nnn/GSE{acc}/suppl/{fname}'
-
-                            print_replace(common_length(f'{fname} [{xretry}]', 40))
-                            with redirect_stdout(downlog):
-                                print(f'[link] [retry {xretry}] {asperalink}')
-                                cmdl = f'ascp -v -k 1 -T -l 200m -i ~/.aspera/connect/etc/asperaweb_id_dsa.openssh {asperalink} src/{name}/'
-                                print(f'[cmdl] {cmdl}')
-                                os.system(cmdl)
-
                             if fname.endswith('_RAW.tar'):
                                 print_replace(common_length('extracting ...', 40))
                                 import tarfile
