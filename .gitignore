@@ -106,3 +106,7 @@ scenic
 methyl
 spatial
 atac
+chipseq
+packages/bincsync
+packages/.database
+packages/database

@@ -1,0 +1,20 @@
+#!python
+
+import os
+
+def rename_recursive(path):
+    dirs = os.listdir(path)
+    for x in dirs:
+        fullpath = os.path.join(path, x)
+        if os.path.isfile(fullpath):
+            # see if duplicates will form.
+            matches = ['barcodes.tsv.gz', 'barcodes.tsv', 'features.tsv.gz', 'features.tsv', 'matrix.mtx.gz', 'matrix.mtx']
+            for m in matches:
+                if fullpath.endswith(m):
+                    print(f'{fullpath} -> {os.path.join(path, m)}')
+                    os.system(f'mv {fullpath} {os.path.join(path, m)}')
+        elif os.path.isdir(fullpath):
+            rename_recursive(fullpath)
+
+rename_recursive('.')
+
